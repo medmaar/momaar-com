@@ -1,0 +1,55 @@
+name: Deploy to Cloudflare Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Create Pages project (ignore if exists)
+        run: |
+          curl -s -X POST \
+            "https://api.cloudflare.com/client/v4/accounts/${{ secrets.ACCOUNT_ID }}/pages/projects" \
+            -H "Authorization: Bearer ${{ secrets.CF_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{"name":"momaar-com","production_branch":"main"}' | python3 -c "
+          import sys,json; d=json.load(sys.stdin)
+          print('Project:', 'created' if d.get('success') else d.get('errors','already exists'))
+          " || true
+
+      - name: Deploy to Cloudflare Pages
+        run: |
+          # Create deployment archive
+          zip -r site.zip index.html trial/ followup/
+
+          # Upload via Pages API direct upload
+          RESULT=$(curl -s -X POST \
+            "https://api.cloudflare.com/client/v4/accounts/${{ secrets.ACCOUNT_ID }}/pages/projects/momaar-com/deployments" \
+            -H "Authorization: Bearer ${{ secrets.CF_TOKEN }}" \
+            -F "files=@site.zip")
+
+          echo "$RESULT" | python3 -c "
+          import sys,json
+          d=json.load(sys.stdin)
+          if d.get('success'):
+              r=d.get('result',{})
+              print('✅ Deployed:', r.get('url','?'))
+          else:
+              print('❌', json.dumps(d.get('errors')))
+          "
+
+      - name: Set custom domain momaar.com
+        run: |
+          curl -s -X POST \
+            "https://api.cloudflare.com/client/v4/accounts/${{ secrets.ACCOUNT_ID }}/pages/projects/momaar-com/domains" \
+            -H "Authorization: Bearer ${{ secrets.CF_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{"name":"momaar.com"}' | python3 -c "
+          import sys,json; d=json.load(sys.stdin)
+          print('Domain:', 'added' if d.get('success') else d.get('errors'))
+          " || true
