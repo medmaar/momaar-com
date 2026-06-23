@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IPTV Credential Generator</title>
+<style>
+  :root {
+    --bg: #0b0b14;
+    --surface: #13132a;
+    --surface2: #1c1c38;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.14);
+    --text: #f0f0f5;
+    --muted: #8888aa;
+    --accent: #fd0322;
+    --green: #1D9E75;
+    --blue: #378ADD;
+    --orange: #D85A30;
+    --radius: 10px;
+    --radius-lg: 14px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 40px 16px 80px;
+  }
+
+  .container { width: 100%; max-width: 580px; }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 36px;
+  }
+  .logo-dot {
+    width: 28px; height: 28px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .logo-dot svg { width: 16px; height: 16px; fill: #fff; }
+  .logo-text { font-size: 15px; font-weight: 600; color: var(--text); }
+  .logo-sub { font-size: 13px; color: var(--muted); margin-top: 1px; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+
+  .field-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  textarea {
+    width: 100%;
+    min-height: 78px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 12.5px;
+    line-height: 1.6;
+    padding: 10px 12px;
+    resize: vertical;
+    outline: none;
+    transition: border-color .15s;
+  }
+  textarea::placeholder { color: #44445a; }
+  textarea:focus { border-color: rgba(255,255,255,0.25); }
+
+  .server-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 20px;
+  }
+
+  .srv {
+    flex: 1;
+    padding: 12px 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: center;
+    transition: all .15s;
+    user-select: none;
+  }
+  .srv:hover { border-color: var(--border2); color: var(--text); }
+  .srv .srv-icon { font-size: 18px; display: block; margin-bottom: 4px; }
+
+  .srv.sel-strong { background: rgba(29,158,117,.12); border-color: rgba(29,158,117,.5); color: #5dcaa5; }
+  .srv.sel-trex   { background: rgba(55,138,221,.12); border-color: rgba(55,138,221,.5); color: #85b7eb; }
+  .srv.sel-dino   { background: rgba(216,90,48,.12);  border-color: rgba(216,90,48,.5);  color: #f0997b; }
+
+  .gen-btn {
+    width: 100%;
+    margin-top: 20px;
+    padding: 13px;
+    background: var(--accent);
+    border: none;
+    border-radius: var(--radius);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    letter-spacing: .01em;
+    transition: opacity .15s, transform .1s;
+  }
+  .gen-btn:hover { opacity: .88; }
+  .gen-btn:active { transform: scale(.98); }
+  .gen-btn:disabled { opacity: .35; cursor: not-allowed; }
+
+  .out-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    display: none;
+  }
+  .out-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .out-label-wrap { display: flex; align-items: center; gap: 8px; }
+  .out-label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+
+  .srv-badge {
+    font-size: 11px; font-weight: 600; padding: 2px 9px;
+    border-radius: 20px; letter-spacing: .04em;
+  }
+  .badge-strong { background: rgba(29,158,117,.2); color: #5dcaa5; }
+  .badge-trex   { background: rgba(55,138,221,.2); color: #85b7eb; }
+  .badge-dino   { background: rgba(216,90,48,.2);  color: #f0997b; }
+
+  .copy-btn {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 12px; font-weight: 600;
+    color: var(--blue);
+    background: rgba(55,138,221,.1);
+    border: 1px solid rgba(55,138,221,.25);
+    border-radius: 6px;
+    padding: 5px 11px;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .copy-btn:hover { background: rgba(55,138,221,.18); }
+  .copy-btn.done { color: var(--green); background: rgba(29,158,117,.1); border-color: rgba(29,158,117,.25); }
+
+  .out-body {
+    padding: 16px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 12.5px;
+    line-height: 1.75;
+    white-space: pre-wrap;
+    word-break: break-all;
+    color: #c8c8e0;
+    max-height: 440px;
+    overflow-y: auto;
+  }
+  .out-body::-webkit-scrollbar { width: 4px; }
+  .out-body::-webkit-scrollbar-track { background: transparent; }
+  .out-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 4px; }
+
+  .err-msg {
+    display: none;
+    font-size: 13px;
+    color: #f0997b;
+    margin-top: 10px;
+    padding: 10px 12px;
+    background: rgba(216,90,48,.1);
+    border: 1px solid rgba(216,90,48,.2);
+    border-radius: var(--radius);
+  }
+
+  @media (max-width: 480px) {
+    body { padding: 24px 12px 60px; }
+    .card { padding: 18px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="logo">
+    <div class="logo-dot">
+      <svg viewBox="0 0 24 24"><path d="M21 7L9 19l-5.5-5.5 1.41-1.41L9 16.17 19.59 5.59 21 7z"/></svg>
+    </div>
+    <div>
+      <div class="logo-text">IPTV Creds</div>
+      <div class="logo-sub">Credential formatter</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="field-label">M3U link from panel</div>
+    <textarea id="m3uInput" placeholder="http://panel.example.com/get.php?username=abc123&password=xyz789&type=m3u_plus&output=ts" spellcheck="false"></textarea>
+    <div class="err-msg" id="errMsg"></div>
+
+    <div style="margin-top:20px" class="field-label">Server</div>
+    <div class="server-row">
+      <div class="srv" id="srv-strong" onclick="pick('strong')">
+        <span class="srv-icon">🟢</span>Strong
+      </div>
+      <div class="srv" id="srv-trex" onclick="pick('trex')">
+        <span class="srv-icon">🔵</span>Trex
+      </div>
+      <div class="srv" id="srv-dino" onclick="pick('dino')">
+        <span class="srv-icon">🟠</span>Dino
+      </div>
+    </div>
+
+    <button class="gen-btn" id="genBtn" onclick="generate()" disabled>Generate credentials</button>
+  </div>
+
+  <div class="out-card" id="outCard">
+    <div class="out-header">
+      <div class="out-label-wrap">
+        <span class="out-label">Ready to send</span>
+        <span class="srv-badge" id="srvBadge"></span>
+      </div>
+      <button class="copy-btn" id="copyBtn" onclick="copyOut()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Copy
+      </button>
+    </div>
+    <div class="out-body" id="outBody"></div>
+  </div>
+
+</div>
+
+<script>
+const SERVERS = {
+  strong: {
+    label: 'Strong',
+    badge: 'badge-strong',
+    portals: ['http://cf.tourlanehub.com'],
+    m3uBase: 'http://cf.tourlanehub.com'
+  },
+  trex: {
+    label: 'Trex',
+    badge: 'badge-trex',
+    portals: ['http://terry.thecontentnest.com', 'http://line.trxdnscloud.ru'],
+    m3uBase: 'http://terry.thecontentnest.com'
+  },
+  dino: {
+    label: 'Dino',
+    badge: 'badge-dino',
+    portals: ['http://vpn.fanjerseys.space', 'http://smart.cwdn.cx'],
+    m3uBase: 'http://vpn.fanjerseys.space'
+  }
+};
+
+let sel = null;
+
+function pick(s) {
+  sel = s;
+  ['strong','trex','dino'].forEach(k => {
+    document.getElementById('srv-'+k).className = 'srv' + (k === s ? ' sel-'+k : '');
+  });
+  checkReady();
+}
+
+document.getElementById('m3uInput').addEventListener('input', () => {
+  document.getElementById('errMsg').style.display = 'none';
+  checkReady();
+});
+
+function checkReady() {
+  const val = document.getElementById('m3uInput').value.trim();
+  document.getElementById('genBtn').disabled = !(val && sel);
+}
+
+function parseLink(raw) {
+  try {
+    const url = new URL(raw);
+    const user = url.searchParams.get('username') || '';
+    const pass = url.searchParams.get('password') || '';
+    const i = raw.indexOf('/get.php');
+    const suffix = i !== -1 ? raw.substring(i) : '';
+    return { user, pass, suffix };
+  } catch(_) { return null; }
+}
+
+function generate() {
+  const raw = document.getElementById('m3uInput').value.trim();
+  const err = document.getElementById('errMsg');
+  err.style.display = 'none';
+
+  const p = parseLink(raw);
+  if (!p || !p.user || !p.pass) {
+    err.textContent = 'Could not read username/password from this link. Make sure the URL contains username= and password=.';
+    err.style.display = 'block';
+    return;
+  }
+
+  const srv = SERVERS[sel];
+  const { user, pass, suffix } = p;
+
+  let txt = '⭐ IPTV Subscription ⭐\n\n';
+  txt += '1️⃣ XTREAM CODES LOGIN\n';
+  txt += 'Username: ' + user + '\n';
+  txt += 'Password: ' + pass + '\n';
+  srv.portals.forEach((url, i) => {
+    txt += 'Portal URL' + (srv.portals.length > 1 ? (i+1) : '') + ': ' + url + '\n';
+  });
+  txt += '\n2️⃣ M3U LOGIN\n';
+  txt += srv.m3uBase + suffix;
+  txt += '\n\n❤️ Support available 24/7 — reach us on WhatsApp or email whenever you need anything ❤️';
+
+  document.getElementById('outBody').textContent = txt;
+  const badge = document.getElementById('srvBadge');
+  badge.textContent = srv.label;
+  badge.className = 'srv-badge ' + srv.badge;
+  document.getElementById('outCard').style.display = 'block';
+  const cb = document.getElementById('copyBtn');
+  cb.className = 'copy-btn';
+  cb.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy';
+  document.getElementById('outCard').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function copyOut() {
+  const txt = document.getElementById('outBody').textContent;
+  navigator.clipboard.writeText(txt).then(() => {
+    const cb = document.getElementById('copyBtn');
+    cb.className = 'copy-btn done';
+    cb.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Copied!';
+    setTimeout(() => {
+      cb.className = 'copy-btn';
+      cb.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy';
+    }, 2200);
+  });
+}
+</script>
+</body>
+</html>
