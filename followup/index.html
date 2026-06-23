@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>IPTV Follow-Up Dashboard</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0d1117;color:#e6edf3;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh}
+
+/* ── Header ── */
+.hd{background:#161b22;border-bottom:1px solid #30363d;padding:14px 16px;position:sticky;top:0;z-index:100}
+.hd-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.hd-title{font-size:17px;font-weight:700}
+.hd-title span{color:#25D366}
+.settings-btn{background:transparent;border:1px solid #30363d;color:#8b949e;padding:5px 11px;border-radius:8px;cursor:pointer;font-size:12px}
+.settings-btn:hover{border-color:#25D366;color:#25D366}
+.stats{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.stat{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:7px 14px;font-size:12px;color:#8b949e}
+.stat b{display:block;font-size:20px;color:#f0f6fc}
+.stat.s-pend b{color:#f59e0b}
+.stat.s-done b{color:#25D366}
+.filters{display:flex;gap:7px;flex-wrap:wrap}
+.fb{background:transparent;border:1px solid #30363d;color:#8b949e;padding:5px 13px;border-radius:20px;cursor:pointer;font-size:12px;transition:all .15s}
+.fb.on{background:#25D366;border-color:#25D366;color:#000;font-weight:700}
+
+/* ── Search + refresh ── */
+.sb{padding:10px 16px;background:#161b22;border-bottom:1px solid #30363d;display:flex;gap:8px;align-items:center}
+.sb input{flex:1;background:#0d1117;border:1px solid #30363d;color:#e6edf3;padding:8px 14px;border-radius:8px;font-size:14px;outline:none}
+.sb input:focus{border-color:#25D366}
+.refresh-btn{background:#0d1117;border:1px solid #30363d;color:#8b949e;padding:8px 12px;border-radius:8px;cursor:pointer;font-size:14px;flex-shrink:0}
+.refresh-btn:hover{border-color:#25D366;color:#25D366}
+
+/* ── List ── */
+.list{padding:12px 14px}
+
+/* ── Card ── */
+.card{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:14px 14px 12px;margin-bottom:10px;position:relative}
+.card.done{opacity:.55;border-color:#21262d}
+.badge-sent{position:absolute;top:10px;right:12px;background:#25D366;color:#000;font-size:10px;font-weight:700;padding:2px 8px;border-radius:12px}
+.card-row1{display:flex;align-items:center;gap:8px;margin-bottom:9px;padding-right:70px}
+.sbadge{padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;color:#000;white-space:nowrap;flex-shrink:0}
+.cemail{font-size:12px;color:#6e7681;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.card-row2{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.cphone{font-size:15px;font-weight:700;color:#f0f6fc}
+.cmeta{font-size:11px;color:#6e7681;margin-top:2px}
+.cdone{font-size:11px;color:#25D366;margin-top:3px}
+.cnote{font-size:11px;color:#8b949e;margin-top:2px;font-style:italic}
+.undo{background:transparent;border:none;color:#6e7681;font-size:11px;cursor:pointer;text-decoration:underline;display:block;margin-top:5px;padding:0}
+
+/* ── WA Button ── */
+.wabtn{background:#25D366;color:#000;border:none;padding:9px 14px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;flex-shrink:0;text-decoration:none}
+.wabtn:active{opacity:.85}
+.wabtn.resend{background:transparent;color:#25D366;border:1px solid #25D366;font-size:12px;padding:7px 11px}
+
+/* ── States ── */
+.loading{text-align:center;padding:48px 20px;color:#6e7681}
+.spin{width:30px;height:30px;border:3px solid #30363d;border-top-color:#25D366;border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 14px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:50px 20px;color:#6e7681}
+.empty .ico{font-size:44px;margin-bottom:10px}
+.err-box{background:#2d1515;border:1px solid #5a1a1a;border-radius:10px;padding:16px;margin:12px;color:#ff7b7b;font-size:13px}
+.err-box b{display:block;margin-bottom:6px;font-size:14px}
+.err-box code{display:block;background:#0d1117;border-radius:6px;padding:8px;margin-top:8px;font-size:11px;word-break:break-all;color:#8b949e}
+
+/* ── Setup / Settings modal ── */
+.overlay{display:none;position:fixed;inset:0;background:#000a;z-index:200;align-items:center;justify-content:center;padding:16px}
+.overlay.open{display:flex}
+.modal{background:#161b22;border:1px solid #30363d;border-radius:14px;padding:20px;width:100%;max-width:420px}
+.modal h3{font-size:16px;font-weight:700;margin-bottom:6px}
+.modal p{font-size:13px;color:#8b949e;margin-bottom:16px;line-height:1.5}
+.modal label{display:block;font-size:12px;color:#8b949e;margin-bottom:5px;font-weight:600;letter-spacing:.3px}
+.modal input{width:100%;background:#0d1117;border:1px solid #30363d;color:#e6edf3;padding:9px 13px;border-radius:8px;font-size:13px;outline:none;margin-bottom:14px;font-family:monospace}
+.modal input:focus{border-color:#25D366}
+.modal select{width:100%;background:#0d1117;border:1px solid #30363d;color:#e6edf3;padding:9px 13px;border-radius:8px;font-size:13px;outline:none;margin-bottom:14px}
+.modal textarea{width:100%;background:#0d1117;border:1px solid #30363d;color:#e6edf3;padding:10px;border-radius:8px;font-size:13px;resize:none;height:75px;outline:none;font-family:inherit}
+.modal-btns{display:flex;gap:8px;margin-top:14px;justify-content:flex-end}
+.modal-btns button{padding:8px 18px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:700}
+.btn-cancel{background:#21262d;color:#e6edf3}
+.btn-save{background:#25D366;color:#000}
+.hint{font-size:11px;color:#6e7681;margin-top:-10px;margin-bottom:14px;line-height:1.4}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#25D366;color:#000;padding:9px 20px;border-radius:20px;font-size:13px;font-weight:700;opacity:0;transition:opacity .25s;z-index:999;white-space:nowrap;pointer-events:none}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<!-- ── Header ────────────────────────────────── -->
+<div class="hd">
+  <div class="hd-top">
+    <div class="hd-title">📱 IPTV <span>Follow-Up</span></div>
+    <button class="settings-btn" onclick="openSettings()">⚙️ Settings</button>
+  </div>
+  <div class="stats">
+    <div class="stat"><b id="st-total">—</b>Total</div>
+    <div class="stat s-pend"><b id="st-pend">—</b>Pending</div>
+    <div class="stat s-done"><b id="st-done">—</b>Contacted</div>
+  </div>
+  <div class="filters">
+    <button class="fb on" onclick="setFilter('all',this)">All</button>
+    <button class="fb" onclick="setFilter('pending',this)">⏳ Pending</button>
+    <button class="fb" onclick="setFilter('contacted',this)">✅ Contacted</button>
+    <button class="fb" onclick="setFilter('en',this)">🇬🇧 EN</button>
+    <button class="fb" onclick="setFilter('fr',this)">🇫🇷 FR</button>
+    <button class="fb" onclick="setFilter('de',this)">🇩🇪 DE</button>
+    <button class="fb" onclick="setFilter('no',this)">🇳🇴 NO</button>
+  </div>
+</div>
+
+<div class="sb">
+  <input type="search" id="q" placeholder="🔍  Search email or phone…" oninput="render()">
+  <button class="refresh-btn" onclick="loadTrials()" title="Refresh">🔄</button>
+</div>
+
+<div class="list" id="list">
+  <div class="loading"><div class="spin"></div>Initialising…</div>
+</div>
+
+<!-- ── Setup / Settings modal ─────────────────── -->
+<div class="overlay" id="settingsOverlay">
+  <div class="modal">
+    <h3>⚙️ Panel Settings</h3>
+    <p>Enter your Activation Panel API key. It's stored only in this browser.</p>
+    <label>PANEL API KEY</label>
+    <input type="text" id="apiKeyInput" placeholder="e.g. e0727c884f949dc3f5bf2792580f4056">
+    <div class="hint">Found in your panel under Profile / API</div>
+    <label>PANEL BASE URL</label>
+    <input type="text" id="apiUrlInput" placeholder="https://activationpanel.ru">
+    <div class="hint">Just the domain, no trailing slash</div>
+    <label>CORS PROXY URL <span style="color:#6e7681;font-weight:400">(required — see setup)</span></label>
+    <input type="text" id="proxyUrlInput" placeholder="https://iptv-cors-proxy.YOUR-NAME.workers.dev">
+    <div class="hint">Your Cloudflare proxy worker URL. Leave blank to try direct (will fail due to CORS).</div>
+    <div class="modal-btns">
+      <button class="btn-cancel" id="settingsCancelBtn" onclick="closeSettings()">Cancel</button>
+      <button class="btn-save" onclick="saveSettings()">Save &amp; Load</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Note modal ─────────────────────────────── -->
+<div class="overlay" id="noteOverlay">
+  <div class="modal">
+    <h3>Add a note <span style="color:#6e7681;font-weight:400;font-size:13px">(optional)</span></h3>
+    <p>Private note — only you see this.</p>
+    <textarea id="noteText" placeholder="e.g. Very interested, follow up in 3 days…"></textarea>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeNote()">Skip</button>
+      <button class="btn-save" onclick="confirmNote()">Save &amp; Mark Sent</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ================================================================
+// CONFIG
+// ================================================================
+const SITE_CFG = {
+  'maplestreamtv.ca': { lang:'en', brand:'MapleStream TV', color:'#f59e0b' },
+  'maple4k.ca':       { lang:'en', brand:'Maple4K',        color:'#f59e0b' },
+  'maplehd.ca':       { lang:'en', brand:'MapleHD',        color:'#f59e0b' },
+  'iptvmojo.com':     { lang:'en', brand:'IPTV Mojo',      color:'#8b5cf6' },
+  'streambleu.fr':    { lang:'fr', brand:'StreamBleu',     color:'#3b82f6' },
+  'mojo4k.fr':        { lang:'fr', brand:'Mojo4K FR',      color:'#8b5cf6' },
+  'mojo4k.de':        { lang:'de', brand:'Mojo4K DE',      color:'#e85d04' },
+  'iptvv.de':         { lang:'de', brand:'IPTVV',          color:'#10b981' },
+  'norgesiptv.com':   { lang:'no', brand:'NorgesIPTV',     color:'#ef4444' },
+};
+
+const MSGS = {
+  en: [
+    "Hey! 👋 How was your free IPTV trial with [BRAND]? If you enjoyed it, we'd love to get your subscription started today! 🚀",
+    "Hi there! Just checking in — how did your [BRAND] free trial go? Everything streaming smoothly? Ready to subscribe? 📺",
+    "Hey! Hope your [BRAND] trial was great! Did you find all the channels you needed? We can set up your subscription right now 🎉",
+    "Hi! Quick follow-up on your [BRAND] free trial — happy with the service? Let's get you on a full plan! ✅",
+    "Hey! 😊 Just wanted to check how your [BRAND] trial went. Love it? We can get you started on a plan today! 🌟",
+  ],
+  fr: [
+    "Bonjour ! 👋 Comment s'est passé votre essai gratuit avec [BRAND] ? Si vous avez aimé, on peut lancer votre abonnement dès aujourd'hui ! 🚀",
+    "Salut ! Juste un petit suivi — comment était votre essai [BRAND] ? Tout streamait bien ? Prêt(e) à vous abonner ? 📺",
+    "Bonjour ! J'espère que votre essai [BRAND] était au top ! Vous avez trouvé toutes vos chaînes ? On démarre votre abonnement maintenant 🎉",
+    "Salut ! Petit suivi sur votre essai [BRAND] — satisfait(e) du service ? Passons à un forfait complet ! ✅",
+    "Bonjour ! 😊 Je voulais juste savoir comment s'est passé votre essai [BRAND]. Vous avez aimé ? On vous met sur un plan dès aujourd'hui ! 🌟",
+  ],
+  de: [
+    "Hallo! 👋 Wie hat Ihnen Ihr kostenloser IPTV-Test mit [BRAND] gefallen? Wenn Sie zufrieden waren, können wir Ihr Abonnement noch heute starten! 🚀",
+    "Hi! Kurze Nachfrage — wie lief Ihr [BRAND]-Test? Hat alles reibungslos gestreamt? Bereit für ein Abo? 📺",
+    "Hallo! Ich hoffe, Ihr [BRAND]-Test war klasse! Haben Sie alle Sender gefunden? Wir richten Ihr Abonnement sofort ein 🎉",
+    "Hi! Kurzes Follow-up zu Ihrem [BRAND]-Test — zufrieden mit dem Service? Legen wir mit einem Vollzugang los! ✅",
+    "Hallo! 😊 Wollte nur fragen, wie Ihr [BRAND]-Test gelaufen ist. Hat es gefallen? Starten wir noch heute Ihr Abonnement! 🌟",
+  ],
+  no: [
+    "Hei! 👋 Hvordan var din gratis IPTV-prøve med [BRAND]? Hvis du likte det, kan vi starte abonnementet ditt i dag! 🚀",
+    "Hei! Bare sjekker inn — hvordan gikk [BRAND]-prøven din? Strømmet alt jevnt? Klar for å abonnere? 📺",
+    "Hei! Håper [BRAND]-prøven var flott! Fant du alle kanalene? Vi setter opp abonnementet ditt nå 🎉",
+    "Hei! Rask oppfølging på [BRAND]-prøven — fornøyd med tjenesten? La oss få deg på en full plan! ✅",
+    "Hei! 😊 Ville bare sjekke hvordan [BRAND]-prøven gikk. Likte du det? Vi kan sette deg opp i dag! 🌟",
+  ],
+};
+
+// ================================================================
+// STATE
+// ================================================================
+let trials       = [];
+let contacts     = JSON.parse(localStorage.getItem('iptv_contacts') || '{}');
+let filter       = 'all';
+let pendingMarkId = null;
+
+// ================================================================
+// SETTINGS
+// ================================================================
+const DEFAULT_PROXY = 'https://iptv-cors-proxy.medmaar.workers.dev';
+
+function getSettings() {
+  return {
+    apiKey:   localStorage.getItem('iptv_api_key') || '',
+    apiUrl:   localStorage.getItem('iptv_api_url') || 'https://activationpanel.ru',
+    proxyUrl: localStorage.getItem('iptv_proxy_url') || DEFAULT_PROXY,
+  };
+}
+
+function openSettings() {
+  const s = getSettings();
+  document.getElementById('apiKeyInput').value   = s.apiKey;
+  document.getElementById('apiUrlInput').value   = s.apiUrl;
+  document.getElementById('proxyUrlInput').value = s.proxyUrl || DEFAULT_PROXY;
+  document.getElementById('settingsCancelBtn').style.display = s.apiKey ? '' : 'none';
+  document.getElementById('settingsOverlay').classList.add('open');
+}
+
+function closeSettings() {
+  document.getElementById('settingsOverlay').classList.remove('open');
+}
+
+function saveSettings() {
+  const key   = document.getElementById('apiKeyInput').value.trim();
+  const url   = document.getElementById('apiUrlInput').value.trim().replace(/\/$/, '');
+  const proxy = document.getElementById('proxyUrlInput').value.trim().replace(/\/$/, '');
+  if (!key) { showToast('Please enter your API key'); return; }
+  localStorage.setItem('iptv_api_key',   key);
+  localStorage.setItem('iptv_api_url',   url || 'https://activationpanel.ru');
+  localStorage.setItem('iptv_proxy_url', proxy);
+  closeSettings();
+  loadTrials();
+}
+
+// ================================================================
+// LOAD TRIALS FROM ACTIVATION PANEL
+// ================================================================
+async function loadTrials() {
+  const { apiKey, proxyUrl } = getSettings();
+  if (!apiKey) { openSettings(); return; }
+
+  document.getElementById('list').innerHTML =
+    '<div class="loading"><div class="spin"></div>Loading trials…</div>';
+
+  const base = proxyUrl || 'https://activationpanel.ru';
+
+  // Try multiple possible action names — panel APIs vary
+  const ACTIONS = ['get_lines', 'lines', 'get_m3u_lines', 'get_all_lines', 'user_list'];
+  let lines = [];
+  let lastRaw = '';
+  let foundAction = '';
+
+  for (const action of ACTIONS) {
+    try {
+      const res = await fetch(`${base}/api/api.php?action=${action}&api_key=${apiKey}`);
+      const text = await res.text();
+      lastRaw = text;
+      if (!res.ok) continue;
+      let parsed;
+      try { parsed = JSON.parse(text); } catch { continue; }
+      const arr = Array.isArray(parsed) ? parsed : (parsed.lines || parsed.data || []);
+      if (Array.isArray(arr) && arr.length > 0) {
+        lines = arr;
+        foundAction = action;
+        break;
+      }
+    } catch { continue; }
+  }
+
+  // Always show debug box so we can see raw response
+  if (lines.length === 0) {
+    document.getElementById('list').innerHTML = `
+      <div class="err-box" style="background:#1a1a2e;border-color:#2a2a5e">
+        <b style="color:#a78bfa">🔍 Debug — tried ${ACTIONS.length} API actions, all returned empty</b>
+        <p style="color:#c4b5fd;margin-top:6px">Last raw API response (action="${ACTIONS[ACTIONS.length-1]}"):</p>
+        <code style="color:#c4b5fd;white-space:pre-wrap;font-size:11px">${lastRaw.slice(0, 600) || '(empty)'}</code>
+        <p style="color:#c4b5fd;margin-top:8px">Also try visiting this URL directly to see the raw data:</p>
+        <code style="color:#a78bfa;font-size:11px;word-break:break-all">${base}/api/api.php?action=reseller_info&api_key=${apiKey}</code>
+      </div>
+      <div style="text-align:center;padding:12px">
+        <button onclick="loadTrials()" style="background:#25D366;border:none;padding:9px 20px;border-radius:8px;cursor:pointer;font-weight:700;font-size:13px">🔄 Retry</button>
+        &nbsp;
+        <button onclick="openSettings()" style="background:#21262d;border:none;padding:9px 16px;border-radius:8px;cursor:pointer;font-size:13px;color:#e6edf3">⚙️ Settings</button>
+      </div>`;
+    return;
+  }
+
+  // Show green debug + first raw line fields
+  if (foundAction) {
+    console.log(`✅ Found data with action="${foundAction}". First line:`, lines[0]);
+  }
+
+  trials = lines.map(parseOneLine).filter(t => t && t.phone && t.phone.length > 5);
+
+  if (trials.length === 0 && lines.length > 0) {
+    document.getElementById('list').innerHTML = `
+      <div class="err-box" style="background:#1a2a1a;border-color:#2a5a2a">
+        <b style="color:#4ade80">✅ API works — action="${foundAction}" — got ${lines.length} lines — but 0 have phones</b>
+        <p style="color:#86efac;margin-top:6px">First line raw JSON (need to find the phone field):</p>
+        <code style="color:#86efac;white-space:pre-wrap;font-size:11px">${JSON.stringify(lines[0], null, 2).slice(0, 800)}</code>
+      </div>`;
+    return;
+  }
+
+  updateStats();
+  render();
+}
+
+function parseOneLine(line) {
+  let site = '', email = '', phone = '';
+
+  // TREX/Activation Panel stores trial info in the 'note' field as:
+  // "Trial / site.com / email@example.com | +1234567890"
+  const noteStr = line.note || line.notes || line.username || '';
+  const m = noteStr.match(/Trial\s*\/\s*([^\/]+?)\s*\/\s*([^|]+?)\s*\|?\s*([+\d\s()-]*)$/i);
+  if (m) {
+    site  = m[1].trim().toLowerCase().replace(/^www\./, '');
+    email = m[2].trim();
+    phone = m[3].trim().replace(/[\s()-]/g, '');
+  }
+
+  // Fallback to structured fields if note parsing fails
+  if (!email && line.email) email = line.email;
+  if (!phone && line.phone) phone = line.phone;
+
+  // exp_date is unix timestamp in TREX
+  let created_at = null;
+  if (line.created_at) created_at = line.created_at;
+  else if (line.date) created_at = line.date;
+
+  return {
+    id:         String(line.id || line.line_id || line.username || Math.random()),
+    site,
+    email,
+    phone:      phone.replace(/[^\d+]/g, ''),
+    created_at,
+    note_raw:   noteStr,
+  };
+}
+
+// ================================================================
+// CONTACTS (localStorage)
+// ================================================================
+function saveContacts() {
+  localStorage.setItem('iptv_contacts', JSON.stringify(contacts));
+}
+
+// ================================================================
+// FILTER + STATS
+// ================================================================
+function setFilter(f, btn) {
+  filter = f;
+  document.querySelectorAll('.fb').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  render();
+}
+
+function getFiltered() {
+  const q = (document.getElementById('q').value || '').toLowerCase();
+  return trials.filter(t => {
+    if (q && !t.email.toLowerCase().includes(q) && !t.phone.includes(q) && !t.site.includes(q)) return false;
+    const cfg  = SITE_CFG[t.site] || {};
+    const done = !!contacts[t.id];
+    if (filter === 'pending')   return !done;
+    if (filter === 'contacted') return done;
+    if (filter === 'en') return cfg.lang === 'en';
+    if (filter === 'fr') return cfg.lang === 'fr';
+    if (filter === 'de') return cfg.lang === 'de';
+    if (filter === 'no') return cfg.lang === 'no';
+    return true;
+  });
+}
+
+function updateStats() {
+  const done = trials.filter(t => !!contacts[t.id]).length;
+  document.getElementById('st-total').textContent = trials.length;
+  document.getElementById('st-pend').textContent  = trials.length - done;
+  document.getElementById('st-done').textContent  = done;
+}
+
+// ================================================================
+// HELPERS
+// ================================================================
+function ago(d) {
+  if (!d) return '';
+  const diff = Date.now() - new Date(d).getTime();
+  const h   = Math.floor(diff / 3600000);
+  const day = Math.floor(h / 24);
+  if (day > 0) return `${day}d ago`;
+  if (h > 0)   return `${h}h ago`;
+  return 'just now';
+}
+
+function buildMsg(site) {
+  const cfg  = SITE_CFG[site] || {};
+  const lang = cfg.lang || 'en';
+  const pool = MSGS[lang] || MSGS.en;
+  const msg  = pool[Math.floor(Math.random() * pool.length)];
+  return msg.replace(/\[BRAND\]/g, cfg.brand || site);
+}
+
+function waLink(trial) {
+  const phone = trial.phone.replace(/[^0-9]/g, '');
+  const msg   = buildMsg(trial.site);
+  return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+}
+
+// ================================================================
+// RENDER
+// ================================================================
+function render() {
+  const list = getFiltered();
+  const el   = document.getElementById('list');
+
+  if (!list.length) {
+    el.innerHTML = '<div class="empty"><div class="ico">📭</div><p>No trials found</p></div>';
+    return;
+  }
+
+  el.innerHTML = list.map(t => {
+    const cfg  = SITE_CFG[t.site] || { brand: t.site || '?', color: '#6e7681', lang: 'en' };
+    const done = !!contacts[t.id];
+    const cd   = contacts[t.id] || {};
+    const link = waLink(t);
+
+    return `<div class="card ${done ? 'done' : ''}" id="card-${CSS.escape(t.id)}">
+      ${done ? '<span class="badge-sent">✓ Sent</span>' : ''}
+      <div class="card-row1">
+        <span class="sbadge" style="background:${cfg.color}">${cfg.brand}</span>
+        <span class="cemail">${t.email}</span>
+      </div>
+      <div class="card-row2">
+        <div>
+          <div class="cphone">${t.phone || '—'}</div>
+          <div class="cmeta">${ago(t.created_at)}</div>
+          ${done ? `<div class="cdone">✓ Sent ${ago(cd.timestamp)}</div>` : ''}
+          ${done && cd.note ? `<div class="cnote">${cd.note}</div>` : ''}
+          ${done ? `<button class="undo" onclick="undo('${t.id.replace(/'/g,"\\'")}')">↩ Undo</button>` : ''}
+        </div>
+        <a href="${link}"
+           class="wabtn ${done ? 'resend' : ''}"
+           onclick="onWA('${t.id.replace(/'/g,"\\'")}', event)"
+           target="_blank">
+          💬 ${done ? 'Re-send' : 'WhatsApp'}
+        </a>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ================================================================
+// WHATSAPP + MARK
+// ================================================================
+function onWA(id, e) {
+  // Let the link open naturally, then show note prompt
+  pendingMarkId = id;
+  setTimeout(() => {
+    document.getElementById('noteText').value = '';
+    document.getElementById('noteOverlay').classList.add('open');
+  }, 700);
+}
+
+function closeNote() {
+  document.getElementById('noteOverlay').classList.remove('open');
+  pendingMarkId = null;
+}
+
+function confirmNote() {
+  const note = document.getElementById('noteText').value.trim();
+  closeNote();
+  if (pendingMarkId) mark(pendingMarkId, note);
+}
+
+function mark(id, note) {
+  contacts[id] = { timestamp: new Date().toISOString(), note: note || '' };
+  saveContacts();
+  updateStats();
+  render();
+  showToast('Marked as contacted ✓');
+}
+
+function undo(id) {
+  delete contacts[id];
+  saveContacts();
+  updateStats();
+  render();
+  showToast('Unmarked ↩');
+}
+
+// ================================================================
+// TOAST
+// ================================================================
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ================================================================
+// BOOT
+// ================================================================
+const { apiKey } = getSettings();
+if (apiKey) {
+  loadTrials();
+} else {
+  openSettings();
+}
+</script>
+</body>
+</html>
