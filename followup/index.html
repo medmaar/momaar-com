@@ -155,6 +155,7 @@ body{background:#0d1117;color:#e6edf3;font-family:-apple-system,BlinkMacSystemFo
 // ================================================================
 const API_KEY     = '35cf68cc83a3a82e1a0ac5361c7b6105';
 const PROXY_URL   = 'https://iptv-cors-proxy.medmaar.workers.dev';
+const KV_READER   = 'https://iptv-kv-reader.medmaar.workers.dev';
 
 const SITE_CFG = {
   'maplestreamtv.ca': { lang:'en', brand:'MapleStream TV', color:'#f59e0b' },
@@ -241,110 +242,60 @@ function saveSettings() {
 }
 
 // ================================================================
-// LOAD TRIALS FROM ACTIVATION PANEL
+// LOAD TRIALS — reads directly from Cloudflare KV via reader worker
 // ================================================================
 async function loadTrials() {
-  const { apiKey, proxyUrl } = getSettings();
-  const base = proxyUrl;
-
   document.getElementById('list').innerHTML =
     '<div class="loading"><div class="spin"></div>Loading trials…</div>';
 
-  // Try endpoints in order — user_list with sub=99 is the demo/trial endpoint
-  const ENDPOINTS = [
-    `/api/api.php?action=user_list&sub=99&api_key=${apiKey}`,
-    `/api/api.php?action=user_list&sub=0&api_key=${apiKey}`,
-    `/api/api.php?action=get_lines&api_key=${apiKey}`,
-    `/api/api.php?action=lines&api_key=${apiKey}`,
-    `/api/api.php?action=user_list&type=demo&api_key=${apiKey}`,
-  ];
+  try {
+    const res  = await fetch(KV_READER);
+    const text = await res.text();
 
-  let lines = [];
-  let lastRaw = '';
-  let foundEndpoint = '';
+    if (!res.ok) throw new Error(`HTTP ${res.status}: ${text.slice(0,200)}`);
 
-  for (const ep of ENDPOINTS) {
-    try {
-      const res = await fetch(`${base}${ep}`);
-      const text = await res.text();
-      lastRaw = text;
-      if (!res.ok) continue;
-      let parsed;
-      try { parsed = JSON.parse(text); } catch { continue; }
-      // Accept array or object with data
-      const arr = Array.isArray(parsed) ? parsed
-                : Array.isArray(parsed?.result) ? parsed.result
-                : Array.isArray(parsed?.data) ? parsed.data
-                : Array.isArray(parsed?.lines) ? parsed.lines
-                : null;
-      if (arr && arr.length > 0) {
-        lines = arr;
-        foundEndpoint = ep.split('?')[0] + '?action=' + ep.match(/action=([^&]+)/)?.[1];
-        break;
-      }
-    } catch { continue; }
-  }
+    let raw;
+    try { raw = JSON.parse(text); } catch { throw new Error(`Not JSON: ${text.slice(0,200)}`); }
 
-  if (lines.length === 0) {
+    if (raw.error) throw new Error(raw.error);
+
+    trials = Array.isArray(raw) ? raw.filter(t => t.phone && t.phone.length > 5) : [];
+
+    if (trials.length === 0) {
+      document.getElementById('list').innerHTML = `
+        <div class="err-box" style="background:#1a2a1a;border-color:#2a5a2a">
+          <b style="color:#4ade80">✅ KV reader connected — 0 trials with phone numbers found</b>
+          <p style="color:#86efac;margin-top:6px">Raw response (first 300 chars):</p>
+          <code style="color:#86efac;white-space:pre-wrap;font-size:11px">${text.slice(0,300)}</code>
+        </div>`;
+      return;
+    }
+
+    updateStats();
+    render();
+
+  } catch (e) {
     document.getElementById('list').innerHTML = `
-      <div class="err-box" style="background:#1a1a2e;border-color:#2a2a5e">
-        <b style="color:#a78bfa">🔍 Tried ${ENDPOINTS.length} endpoints — all empty or error</b>
-        <p style="color:#c4b5fd;margin-top:6px">Last raw response:</p>
-        <code style="color:#c4b5fd;white-space:pre-wrap;font-size:11px">${lastRaw.slice(0,500) || '(empty)'}</code>
+      <div class="err-box">
+        <b>⚠️ KV reader error</b>
+        <p>${e.message}</p>
+        <code>${e.message}</code>
       </div>
       <div style="text-align:center;padding:12px">
         <button onclick="loadTrials()" style="background:#25D366;border:none;padding:9px 20px;border-radius:8px;cursor:pointer;font-weight:700;font-size:13px">🔄 Retry</button>
-        &nbsp;
-        <button onclick="openSettings()" style="background:#21262d;border:none;padding:9px 16px;border-radius:8px;cursor:pointer;font-size:13px;color:#e6edf3">⚙️ Settings</button>
       </div>`;
-    return;
   }
-
-  trials = lines.map(parseOneLine).filter(t => t && t.phone && t.phone.length > 5);
-
-  if (trials.length === 0 && lines.length > 0) {
-    document.getElementById('list').innerHTML = `
-      <div class="err-box" style="background:#1a2a1a;border-color:#2a5a2a">
-        <b style="color:#4ade80">✅ Got ${lines.length} lines via "${foundEndpoint}" — 0 have phones in notes</b>
-        <p style="color:#86efac;margin-top:6px">First raw line:</p>
-        <code style="color:#86efac;white-space:pre-wrap;font-size:11px">${JSON.stringify(lines[0],null,2).slice(0,800)}</code>
-      </div>`;
-    return;
-  }
-
-  updateStats();
-  render();
 }
 
-function parseOneLine(line) {
-  let site = '', email = '', phone = '';
-
-  // TREX/Activation Panel stores trial info in the 'note' field as:
-  // "Trial / site.com / email@example.com | +1234567890"
-  const noteStr = line.note || line.notes || line.username || '';
-  const m = noteStr.match(/Trial\s*\/\s*([^\/]+?)\s*\/\s*([^|]+?)\s*\|?\s*([+\d\s()-]*)$/i);
-  if (m) {
-    site  = m[1].trim().toLowerCase().replace(/^www\./, '');
-    email = m[2].trim();
-    phone = m[3].trim().replace(/[\s()-]/g, '');
-  }
-
-  // Fallback to structured fields if note parsing fails
-  if (!email && line.email) email = line.email;
-  if (!phone && line.phone) phone = line.phone;
-
-  // exp_date is unix timestamp in TREX
-  let created_at = null;
-  if (line.created_at) created_at = line.created_at;
-  else if (line.date) created_at = line.date;
-
+function parseOneLine(t) {
+  // KV data already has structured fields: site, email, phone, name, created_at
   return {
-    id:         String(line.id || line.line_id || line.username || Math.random()),
-    site,
-    email,
-    phone:      phone.replace(/[^\d+]/g, ''),
-    created_at,
-    note_raw:   noteStr,
+    id:         t.id || String(Math.random()),
+    site:       (t.site || '').toLowerCase().replace(/^www\./,''),
+    email:      t.email || '',
+    phone:      (t.phone || '').replace(/[^\d+]/g, ''),
+    name:       t.name || '',
+    created_at: t.created_at || null,
   };
 }
 
