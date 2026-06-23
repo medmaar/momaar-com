@@ -121,19 +121,14 @@ body{background:#0d1117;color:#e6edf3;font-family:-apple-system,BlinkMacSystemFo
 <!-- ── Setup / Settings modal ─────────────────── -->
 <div class="overlay" id="settingsOverlay">
   <div class="modal">
-    <h3>⚙️ Panel Settings</h3>
-    <p>Enter your Activation Panel API key. It's stored only in this browser.</p>
+    <h3>⚙️ Settings</h3>
+    <p>API key is pre-configured. Only change if needed.</p>
     <label>PANEL API KEY</label>
-    <input type="text" id="apiKeyInput" placeholder="e.g. e0727c884f949dc3f5bf2792580f4056">
-    <div class="hint">Found in your panel under Profile / API</div>
-    <label>PANEL BASE URL</label>
-    <input type="text" id="apiUrlInput" placeholder="https://activationpanel.ru">
-    <div class="hint">Just the domain, no trailing slash</div>
-    <label>CORS PROXY URL <span style="color:#6e7681;font-weight:400">(required — see setup)</span></label>
-    <input type="text" id="proxyUrlInput" placeholder="https://iptv-cors-proxy.YOUR-NAME.workers.dev">
-    <div class="hint">Your Cloudflare proxy worker URL. Leave blank to try direct (will fail due to CORS).</div>
+    <input type="text" id="apiKeyInput" placeholder="API key">
+    <label>CORS PROXY URL</label>
+    <input type="text" id="proxyUrlInput" placeholder="https://iptv-cors-proxy.medmaar.workers.dev">
     <div class="modal-btns">
-      <button class="btn-cancel" id="settingsCancelBtn" onclick="closeSettings()">Cancel</button>
+      <button class="btn-cancel" onclick="closeSettings()">Cancel</button>
       <button class="btn-save" onclick="saveSettings()">Save &amp; Load</button>
     </div>
   </div>
@@ -156,8 +151,11 @@ body{background:#0d1117;color:#e6edf3;font-family:-apple-system,BlinkMacSystemFo
 
 <script>
 // ================================================================
-// CONFIG
+// CONFIG — hardcoded, no login needed
 // ================================================================
+const API_KEY     = '35cf68cc83a3a82e1a0ac5361c7b6105';
+const PROXY_URL   = 'https://iptv-cors-proxy.medmaar.workers.dev';
+
 const SITE_CFG = {
   'maplestreamtv.ca': { lang:'en', brand:'MapleStream TV', color:'#f59e0b' },
   'maple4k.ca':       { lang:'en', brand:'Maple4K',        color:'#f59e0b' },
@@ -210,24 +208,21 @@ let filter       = 'all';
 let pendingMarkId = null;
 
 // ================================================================
-// SETTINGS
+// SETTINGS — kept for override only, API key pre-filled
 // ================================================================
-const DEFAULT_PROXY = 'https://iptv-cors-proxy.medmaar.workers.dev';
+const DEFAULT_PROXY = PROXY_URL;
 
 function getSettings() {
   return {
-    apiKey:   localStorage.getItem('iptv_api_key') || '',
-    apiUrl:   localStorage.getItem('iptv_api_url') || 'https://activationpanel.ru',
-    proxyUrl: localStorage.getItem('iptv_proxy_url') || DEFAULT_PROXY,
+    apiKey:   localStorage.getItem('iptv_api_key') || API_KEY,
+    proxyUrl: localStorage.getItem('iptv_proxy_url') || PROXY_URL,
   };
 }
 
 function openSettings() {
   const s = getSettings();
   document.getElementById('apiKeyInput').value   = s.apiKey;
-  document.getElementById('apiUrlInput').value   = s.apiUrl;
-  document.getElementById('proxyUrlInput').value = s.proxyUrl || DEFAULT_PROXY;
-  document.getElementById('settingsCancelBtn').style.display = s.apiKey ? '' : 'none';
+  document.getElementById('proxyUrlInput').value = s.proxyUrl;
   document.getElementById('settingsOverlay').classList.add('open');
 }
 
@@ -237,11 +232,9 @@ function closeSettings() {
 
 function saveSettings() {
   const key   = document.getElementById('apiKeyInput').value.trim();
-  const url   = document.getElementById('apiUrlInput').value.trim().replace(/\/$/, '');
   const proxy = document.getElementById('proxyUrlInput').value.trim().replace(/\/$/, '');
   if (!key) { showToast('Please enter your API key'); return; }
   localStorage.setItem('iptv_api_key',   key);
-  localStorage.setItem('iptv_api_url',   url || 'https://activationpanel.ru');
   localStorage.setItem('iptv_proxy_url', proxy);
   closeSettings();
   loadTrials();
@@ -252,45 +245,52 @@ function saveSettings() {
 // ================================================================
 async function loadTrials() {
   const { apiKey, proxyUrl } = getSettings();
-  if (!apiKey) { openSettings(); return; }
+  const base = proxyUrl;
 
   document.getElementById('list').innerHTML =
     '<div class="loading"><div class="spin"></div>Loading trials…</div>';
 
-  const base = proxyUrl || 'https://activationpanel.ru';
+  // Try endpoints in order — user_list with sub=99 is the demo/trial endpoint
+  const ENDPOINTS = [
+    `/api/api.php?action=user_list&sub=99&api_key=${apiKey}`,
+    `/api/api.php?action=user_list&sub=0&api_key=${apiKey}`,
+    `/api/api.php?action=get_lines&api_key=${apiKey}`,
+    `/api/api.php?action=lines&api_key=${apiKey}`,
+    `/api/api.php?action=user_list&type=demo&api_key=${apiKey}`,
+  ];
 
-  // Try multiple possible action names — panel APIs vary
-  const ACTIONS = ['get_lines', 'lines', 'get_m3u_lines', 'get_all_lines', 'user_list'];
   let lines = [];
   let lastRaw = '';
-  let foundAction = '';
+  let foundEndpoint = '';
 
-  for (const action of ACTIONS) {
+  for (const ep of ENDPOINTS) {
     try {
-      const res = await fetch(`${base}/api/api.php?action=${action}&api_key=${apiKey}`);
+      const res = await fetch(`${base}${ep}`);
       const text = await res.text();
       lastRaw = text;
       if (!res.ok) continue;
       let parsed;
       try { parsed = JSON.parse(text); } catch { continue; }
-      const arr = Array.isArray(parsed) ? parsed : (parsed.lines || parsed.data || []);
-      if (Array.isArray(arr) && arr.length > 0) {
+      // Accept array or object with data
+      const arr = Array.isArray(parsed) ? parsed
+                : Array.isArray(parsed?.result) ? parsed.result
+                : Array.isArray(parsed?.data) ? parsed.data
+                : Array.isArray(parsed?.lines) ? parsed.lines
+                : null;
+      if (arr && arr.length > 0) {
         lines = arr;
-        foundAction = action;
+        foundEndpoint = ep.split('?')[0] + '?action=' + ep.match(/action=([^&]+)/)?.[1];
         break;
       }
     } catch { continue; }
   }
 
-  // Always show debug box so we can see raw response
   if (lines.length === 0) {
     document.getElementById('list').innerHTML = `
       <div class="err-box" style="background:#1a1a2e;border-color:#2a2a5e">
-        <b style="color:#a78bfa">🔍 Debug — tried ${ACTIONS.length} API actions, all returned empty</b>
-        <p style="color:#c4b5fd;margin-top:6px">Last raw API response (action="${ACTIONS[ACTIONS.length-1]}"):</p>
-        <code style="color:#c4b5fd;white-space:pre-wrap;font-size:11px">${lastRaw.slice(0, 600) || '(empty)'}</code>
-        <p style="color:#c4b5fd;margin-top:8px">Also try visiting this URL directly to see the raw data:</p>
-        <code style="color:#a78bfa;font-size:11px;word-break:break-all">${base}/api/api.php?action=reseller_info&api_key=${apiKey}</code>
+        <b style="color:#a78bfa">🔍 Tried ${ENDPOINTS.length} endpoints — all empty or error</b>
+        <p style="color:#c4b5fd;margin-top:6px">Last raw response:</p>
+        <code style="color:#c4b5fd;white-space:pre-wrap;font-size:11px">${lastRaw.slice(0,500) || '(empty)'}</code>
       </div>
       <div style="text-align:center;padding:12px">
         <button onclick="loadTrials()" style="background:#25D366;border:none;padding:9px 20px;border-radius:8px;cursor:pointer;font-weight:700;font-size:13px">🔄 Retry</button>
@@ -300,19 +300,14 @@ async function loadTrials() {
     return;
   }
 
-  // Show green debug + first raw line fields
-  if (foundAction) {
-    console.log(`✅ Found data with action="${foundAction}". First line:`, lines[0]);
-  }
-
   trials = lines.map(parseOneLine).filter(t => t && t.phone && t.phone.length > 5);
 
   if (trials.length === 0 && lines.length > 0) {
     document.getElementById('list').innerHTML = `
       <div class="err-box" style="background:#1a2a1a;border-color:#2a5a2a">
-        <b style="color:#4ade80">✅ API works — action="${foundAction}" — got ${lines.length} lines — but 0 have phones</b>
-        <p style="color:#86efac;margin-top:6px">First line raw JSON (need to find the phone field):</p>
-        <code style="color:#86efac;white-space:pre-wrap;font-size:11px">${JSON.stringify(lines[0], null, 2).slice(0, 800)}</code>
+        <b style="color:#4ade80">✅ Got ${lines.length} lines via "${foundEndpoint}" — 0 have phones in notes</b>
+        <p style="color:#86efac;margin-top:6px">First raw line:</p>
+        <code style="color:#86efac;white-space:pre-wrap;font-size:11px">${JSON.stringify(lines[0],null,2).slice(0,800)}</code>
       </div>`;
     return;
   }
@@ -513,14 +508,9 @@ function showToast(msg) {
 }
 
 // ================================================================
-// BOOT
+// BOOT — always auto-load, no settings prompt needed
 // ================================================================
-const { apiKey } = getSettings();
-if (apiKey) {
-  loadTrials();
-} else {
-  openSettings();
-}
+loadTrials();
 </script>
 </body>
 </html>
