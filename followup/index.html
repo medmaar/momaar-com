@@ -112,6 +112,7 @@ body{background:#0d1117;color:#e6edf3;font-family:-apple-system,BlinkMacSystemFo
 <div class="sb">
   <input type="search" id="q" placeholder="🔍  Search email or phone…" oninput="render()">
   <button class="refresh-btn" onclick="loadTrials()" title="Refresh">🔄</button>
+  <button class="refresh-btn" onclick="openImport()" title="Import from panel" style="background:#1a2a1a;border-color:#25D366;color:#25D366">📥</button>
 </div>
 
 <div class="list" id="list">
@@ -134,7 +135,26 @@ body{background:#0d1117;color:#e6edf3;font-family:-apple-system,BlinkMacSystemFo
   </div>
 </div>
 
-<!-- ── Note modal ─────────────────────────────── -->
+<!-- ── Import modal ────────────────────────────── -->
+<div class="overlay" id="importOverlay">
+  <div class="modal">
+    <h3>📥 Import from Panel</h3>
+    <p style="margin-bottom:12px">
+      <b style="color:#f0f6fc">Step 1:</b> Go to your panel →
+      <a href="https://activationpanel.ru/users?s=lines" target="_blank" style="color:#25D366">activationpanel.ru/users?s=lines</a>
+      and search <b>"trial"</b> to show all trials.<br><br>
+      <b style="color:#f0f6fc">Step 2:</b> Create a bookmark with this URL and click it on the panel page:
+    </p>
+    <textarea id="bookmarkletText" readonly style="height:60px;font-size:10px;font-family:monospace;word-break:break-all;margin-bottom:12px"></textarea>
+    <button onclick="copyBookmarklet()" style="background:#8b5cf6;color:#fff;border:none;padding:7px 14px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700;margin-bottom:14px;width:100%">📋 Copy Bookmarklet URL</button>
+    <p><b style="color:#f0f6fc">Step 3:</b> After clicking it on the panel page, come back here and paste the copied JSON:</p>
+    <textarea id="importJson" placeholder='Paste JSON here (starts with [{"id":...)' style="height:100px;margin-top:8px"></textarea>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeImport()">Cancel</button>
+      <button class="btn-save" onclick="doImport()">Import Trials</button>
+    </div>
+  </div>
+</div>
 <div class="overlay" id="noteOverlay">
   <div class="modal">
     <h3>Add a note <span style="color:#6e7681;font-weight:400;font-size:13px">(optional)</span></h3>
@@ -261,6 +281,15 @@ async function loadTrials() {
 
     trials = Array.isArray(raw) ? raw.filter(t => t.phone && t.phone.length > 5) : [];
 
+    // Merge with locally imported trials (from panel bookmarklet)
+    const imported = JSON.parse(localStorage.getItem('iptv_imported') || '[]');
+    if (imported.length > 0) {
+      const seen = new Set(trials.map(t => t.email + t.phone));
+      for (const t of imported) {
+        if (!seen.has(t.email + t.phone)) { seen.add(t.email + t.phone); trials.push(t); }
+      }
+    }
+
     if (trials.length === 0) {
       document.getElementById('list').innerHTML = `
         <div class="err-box" style="background:#1a2a1a;border-color:#2a5a2a">
@@ -300,8 +329,46 @@ function parseOneLine(t) {
 }
 
 // ================================================================
-// CONTACTS (localStorage)
+// IMPORT FROM PANEL
 // ================================================================
+const BOOKMARKLET = `javascript:(function(){var notes=[];document.querySelectorAll('td,div,span,p').forEach(function(el){var t=el.textContent.trim();if(t.match(/^Trial\\s*\\/\\s*\\S+\\s*\\/\\s*\\S+/)){notes.push(t)}});var trials=[];var seen={};notes.forEach(function(n){var m=n.match(/Trial\\s*\\/\\s*([^\\/]+?)\\s*\\/\\s*([^|]+?)\\s*\\|?\\s*([+\\d\\s()-]{6,})/);if(!m)return;var phone=m[3].trim().replace(/[\\s()-]/g,'');if(!phone||phone.length<6)return;var key=m[2].trim()+phone;if(seen[key])return;seen[key]=1;trials.push({id:'imp_'+Date.now()+'_'+trials.length,site:m[1].trim().toLowerCase(),email:m[2].trim(),phone:phone,name:'',created_at:new Date().toISOString(),source:'import'})});if(!trials.length){alert('No trials found. Make sure you are on activationpanel.ru/users?s=lines and scroll down to show all rows.');return;}var json=JSON.stringify(trials);navigator.clipboard.writeText(json).then(function(){alert('Copied '+trials.length+' trials! Go back to momaar.com/followup and paste in the Import box.')}).catch(function(){prompt('Copy this JSON:',json)});})();`;
+
+function openImport() {
+  document.getElementById('bookmarkletText').value = BOOKMARKLET;
+  document.getElementById('importJson').value = '';
+  document.getElementById('importOverlay').classList.add('open');
+}
+function closeImport() {
+  document.getElementById('importOverlay').classList.remove('open');
+}
+function copyBookmarklet() {
+  navigator.clipboard.writeText(BOOKMARKLET)
+    .then(() => showToast('Bookmarklet copied! Create a browser bookmark and paste this as the URL'))
+    .catch(() => { document.getElementById('bookmarkletText').select(); document.execCommand('copy'); showToast('Copied!'); });
+}
+function doImport() {
+  const raw = document.getElementById('importJson').value.trim();
+  if (!raw) { showToast('Paste the JSON first'); return; }
+  try {
+    const imported = JSON.parse(raw);
+    if (!Array.isArray(imported)) throw new Error('Not an array');
+
+    // Merge with existing imported, deduplicate by email+phone
+    const existing = JSON.parse(localStorage.getItem('iptv_imported') || '[]');
+    const seen = new Set(existing.map(t => t.email + t.phone));
+    let added = 0;
+    for (const t of imported) {
+      const key = t.email + t.phone;
+      if (!seen.has(key)) { seen.add(key); existing.push(t); added++; }
+    }
+    localStorage.setItem('iptv_imported', JSON.stringify(existing));
+    closeImport();
+    showToast(`Imported ${added} new trials (${imported.length - added} duplicates skipped)`);
+    loadTrials();
+  } catch(e) {
+    showToast('Invalid JSON — make sure you copied the full output');
+  }
+}
 function saveContacts() {
   localStorage.setItem('iptv_contacts', JSON.stringify(contacts));
 }
