@@ -217,8 +217,10 @@
   </div>
 
   <div class="card">
-    <div class="field-label">M3U link from panel</div>
-    <textarea id="m3uInput" placeholder="http://panel.example.com/get.php?username=abc123&password=xyz789&type=m3u_plus&output=ts" spellcheck="false"></textarea>
+    <div class="field-label">M3U LINK FROM PANEL</div>
+    <div style="font-size:11px;color:#888;margin-bottom:6px">Paste one or multiple links — one per line</div>
+    <textarea id="m3uInput" placeholder="http://panel.example.com/get.php?username=abc123&password=xyz789&type=m3u_plus&output=ts
+http://panel.example.com/get.php?username=def456&password=ghi789&type=m3u_plus&output=ts" spellcheck="false" style="min-height:100px"></textarea>
     <div class="err-msg" id="errMsg"></div>
 
     <div style="margin-top:20px" class="field-label">Server</div>
@@ -307,29 +309,46 @@ function parseLink(raw) {
 }
 
 function generate() {
-  const raw = document.getElementById('m3uInput').value.trim();
+  const rawInput = document.getElementById('m3uInput').value.trim();
   const err = document.getElementById('errMsg');
   err.style.display = 'none';
 
-  const p = parseLink(raw);
-  if (!p || !p.user || !p.pass) {
-    err.textContent = 'Could not read username/password from this link. Make sure the URL contains username= and password=.';
+  // Split by newlines and filter empty lines
+  const lines = rawInput.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  if (!lines.length) {
+    err.textContent = 'Please paste at least one M3U link.';
     err.style.display = 'block';
     return;
   }
 
   const srv = SERVERS[sel];
-  const { user, pass, suffix } = p;
+  const parsed = lines.map(l => parseLink(l)).filter(p => p && p.user && p.pass);
+
+  if (!parsed.length) {
+    err.textContent = 'Could not read username/password from the link(s). Make sure URLs contain username= and password=.';
+    err.style.display = 'block';
+    return;
+  }
 
   let txt = '⭐ IPTV Subscription ⭐\n\n';
-  txt += '1️⃣ XTREAM CODES LOGIN\n';
-  txt += 'Username: ' + user + '\n';
-  txt += 'Password: ' + pass + '\n';
-  srv.portals.forEach((url, i) => {
-    txt += 'Portal URL' + (srv.portals.length > 1 ? (i+1) : '') + ': ' + url + '\n';
+
+  parsed.forEach(({ user, pass, suffix }, idx) => {
+    if (parsed.length > 1) {
+      txt += '✅✅✅ CONNECTION ' + (idx + 1) + ' ✅✅✅\n\n';
+    }
+    txt += '1️⃣ XTREAM CODES LOGIN\n';
+    txt += 'Username: ' + user + '\n';
+    txt += 'Password: ' + pass + '\n';
+    srv.portals.forEach((url, i) => {
+      txt += 'Portal URL' + (srv.portals.length > 1 ? (i+1) : '') + ': ' + url + '\n';
+    });
+    txt += '\n2️⃣ M3U LOGIN\n';
+    txt += srv.m3uBase + suffix;
+    if (idx < parsed.length - 1) {
+      txt += '\n\n========================================\n\n';
+    }
   });
-  txt += '\n2️⃣ M3U LOGIN\n';
-  txt += srv.m3uBase + suffix;
+
   txt += '\n\n❤️ Support available 24/7 — reach us on WhatsApp or email whenever you need anything ❤️';
 
   document.getElementById('outBody').textContent = txt;
