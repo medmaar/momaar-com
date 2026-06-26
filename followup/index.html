@@ -279,7 +279,7 @@ async function loadTrials() {
 
     if (raw.error) throw new Error(raw.error);
 
-    trials = Array.isArray(raw) ? raw.filter(t => t.phone && t.phone.length > 5) : [];
+    trials = Array.isArray(raw) ? raw : [];
 
     // Merge with locally imported trials (from panel bookmarklet)
     const imported = JSON.parse(localStorage.getItem('iptv_imported') || '[]');
@@ -480,18 +480,11 @@ function render() {
 // WHATSAPP + MARK
 // ================================================================
 function onWA(id, e) {
-  // Let the link open naturally, then show note prompt
-  pendingMarkId = id;
-  setTimeout(() => {
-    document.getElementById('noteText').value = '';
-    document.getElementById('noteOverlay').classList.add('open');
-  }, 700);
+  // Mark as contacted immediately when WhatsApp is tapped
+  mark(id, '');
 }
 
-function closeNote() {
-  document.getElementById('noteOverlay').classList.remove('open');
-  pendingMarkId = null;
-}
+function closeNote() { document.getElementById('noteOverlay').classList.remove('open'); pendingMarkId = null; }
 
 function confirmNote() {
   const note = document.getElementById('noteText').value.trim();
