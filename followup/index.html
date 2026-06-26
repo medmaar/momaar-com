@@ -175,7 +175,6 @@ body{background:#0d1117;color:#e6edf3;font-family:-apple-system,BlinkMacSystemFo
 // ================================================================
 const API_KEY     = '35cf68cc83a3a82e1a0ac5361c7b6105';
 const PROXY_URL   = 'https://iptv-cors-proxy.medmaar.workers.dev';
-const KV_READER   = 'https://iptv-kv-reader.medmaar.workers.dev';
 
 const SITE_CFG = {
   'maplestreamtv.ca': { lang:'en', brand:'MapleStream TV', color:'#f59e0b' },
@@ -224,7 +223,8 @@ const MSGS = {
 // STATE
 // ================================================================
 let trials       = [];
-let contacts     = JSON.parse(localStorage.getItem('iptv_contacts') || '{}');
+let contacts     = {};  // loaded from KV on boot, synced across all devices
+const KV_READER  = 'https://iptv-kv-reader.medmaar.workers.dev';
 let filter       = 'all';
 let pendingMarkId = null;
 
@@ -269,7 +269,17 @@ async function loadTrials() {
     '<div class="loading"><div class="spin"></div>Loading trials…</div>';
 
   try {
-    const res  = await fetch(KV_READER);
+    // Fetch trials AND contacts in parallel
+    const [res, contactsRes] = await Promise.all([
+      fetch(KV_READER),
+      fetch(KV_READER + '/contacts')
+    ]);
+    try {
+      const kvContacts = await contactsRes.json();
+      if (kvContacts && typeof kvContacts === 'object') {
+        contacts = kvContacts;
+      }
+    } catch {}
     const text = await res.text();
 
     if (!res.ok) throw new Error(`HTTP ${res.status}: ${text.slice(0,200)}`);
@@ -369,8 +379,18 @@ function doImport() {
     showToast('Invalid JSON — make sure you copied the full output');
   }
 }
-function saveContacts() {
-  localStorage.setItem('iptv_contacts', JSON.stringify(contacts));
+async function saveContacts() {
+  // Save to KV so all devices stay in sync
+  try {
+    await fetch(KV_READER + '/contacts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(contacts)
+    });
+  } catch(e) {
+    // Fallback to localStorage if KV fails
+    localStorage.setItem('iptv_contacts', JSON.stringify(contacts));
+  }
 }
 
 // ================================================================
