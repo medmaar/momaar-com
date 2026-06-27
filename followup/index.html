@@ -294,11 +294,39 @@ async function loadTrials() {
     trials = Array.isArray(raw) ? raw : [];
 
     // Merge with locally imported trials (from panel bookmarklet)
+    // AND push any localStorage-only entries to KV so all devices see the same data
     const imported = JSON.parse(localStorage.getItem('iptv_imported') || '[]');
     if (imported.length > 0) {
-      const seen = new Set(trials.map(t => t.email + t.phone));
+      const seen = new Set(trials.map(t => (t.email||'') + (t.phone||'')));
+      const toSync = [];
       for (const t of imported) {
-        if (!seen.has(t.email + t.phone)) { seen.add(t.email + t.phone); trials.push(t); }
+        const k = (t.email||'') + (t.phone||'');
+        if (!seen.has(k)) {
+          seen.add(k);
+          trials.push(t);
+          toSync.push(t); // not yet in KV — needs syncing
+        }
+      }
+      // Push missing entries to KV in background (fire-and-forget)
+      if (toSync.length > 0) {
+        (async () => {
+          for (const t of toSync) {
+            try {
+              await fetch(KV_READER + '/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  name:       t.name  || '',
+                  email:      t.email || '',
+                  whatsapp:   t.phone || t.whatsapp || '',
+                  phone:      t.phone || t.whatsapp || '',
+                  site:       t.site  || 'unknown',
+                  created_at: t.created_at || Date.now(),
+                }),
+              });
+            } catch(_) {}
+          }
+        })();
       }
     }
 
