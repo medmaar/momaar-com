@@ -304,10 +304,14 @@ async function loadTrials() {
 
     if (trials.length === 0) {
       document.getElementById('list').innerHTML = `
-        <div class="err-box" style="background:#1a2a1a;border-color:#2a5a2a">
-          <b style="color:#4ade80">✅ KV reader connected — 0 trials with phone numbers found</b>
-          <p style="color:#86efac;margin-top:6px">Raw response (first 300 chars):</p>
-          <code style="color:#86efac;white-space:pre-wrap;font-size:11px">${text.slice(0,300)}</code>
+        <div class="err-box" style="background:#1a2a1a;border-color:#2a5a2a;text-align:center;padding:28px">
+          <b style="color:#4ade80;font-size:15px">✅ KV reader connected — no trials yet</b>
+          <p style="color:#86efac;margin:10px 0 4px;font-size:13px">Page auto-refreshes every 30s. Or click to refresh now:</p>
+          <button onclick="loadTrials()" style="background:#25D366;border:none;padding:10px 24px;border-radius:8px;cursor:pointer;font-weight:700;font-size:14px;color:#000;margin:8px 0">🔄 Refresh Now</button>
+          <details style="margin-top:12px;text-align:left">
+            <summary style="color:#86efac;font-size:11px;cursor:pointer">Raw response</summary>
+            <code style="color:#86efac;white-space:pre-wrap;font-size:10px;display:block;margin-top:6px">${text.slice(0,300)}</code>
+          </details>
         </div>`;
       return;
     }
@@ -542,8 +546,10 @@ function showToast(msg) {
 
 // ================================================================
 // BOOT — always auto-load, no settings prompt needed
+// Auto-refresh every 30s so new trials appear without manual reload
 // ================================================================
 loadTrials();
+setInterval(loadTrials, 30000);
 </script>
 </body>
 </html>
