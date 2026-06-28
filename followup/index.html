@@ -307,26 +307,21 @@ async function loadTrials() {
           toSync.push(t); // not yet in KV — needs syncing
         }
       }
-      // Push missing entries to KV in background (fire-and-forget)
+      // Push ALL missing entries to KV in ONE atomic call (prevents race conditions)
       if (toSync.length > 0) {
-        (async () => {
-          for (const t of toSync) {
-            try {
-              await fetch(KV_READER + '/add', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  name:       t.name  || '',
-                  email:      t.email || '',
-                  whatsapp:   t.phone || t.whatsapp || '',
-                  phone:      t.phone || t.whatsapp || '',
-                  site:       t.site  || 'unknown',
-                  created_at: t.created_at || Date.now(),
-                }),
-              });
-            } catch(_) {}
-          }
-        })();
+        fetch(KV_READER + '/add-bulk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(toSync.map(t => ({
+            name:       t.name  || '',
+            email:      t.email || '',
+            whatsapp:   t.phone || t.whatsapp || '',
+            phone:      t.phone || t.whatsapp || '',
+            site:       t.site  || 'unknown',
+            created_at: t.created_at || Date.now(),
+            source:     'localStorage',
+          }))),
+        }).catch(() => {});
       }
     }
 
