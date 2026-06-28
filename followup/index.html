@@ -307,22 +307,7 @@ async function loadTrials() {
           toSync.push(t); // not yet in KV — needs syncing
         }
       }
-      // Push ALL missing entries to KV in ONE atomic call (prevents race conditions)
-      if (toSync.length > 0) {
-        fetch(KV_READER + '/add-bulk', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(toSync.map(t => ({
-            name:       t.name  || '',
-            email:      t.email || '',
-            whatsapp:   t.phone || t.whatsapp || '',
-            phone:      t.phone || t.whatsapp || '',
-            site:       t.site  || 'unknown',
-            created_at: t.created_at || Date.now(),
-            source:     'localStorage',
-          }))),
-        }).catch(() => {});
-      }
+      // localStorage entries are merged locally only (live KV reader is source of truth)
     }
 
     if (trials.length === 0) {
