@@ -557,7 +557,7 @@ function showToast(msg) {
 // Auto-refresh every 30s so new trials appear without manual reload
 // ================================================================
 loadTrials();
-setInterval(loadTrials, 30000);
+setInterval(loadTrials, 300000); // refresh every 5 min (saves KV read quota)
 </script>
 </body>
 </html>
