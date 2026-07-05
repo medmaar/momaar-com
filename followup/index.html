@@ -17,6 +17,9 @@ body{background:#0d1117;color:#e6edf3;font-family:-apple-system,BlinkMacSystemFo
 .hd-title span{color:#25D366}
 .settings-btn{background:transparent;border:1px solid #30363d;color:#8b949e;padding:5px 11px;border-radius:8px;cursor:pointer;font-size:12px}
 .settings-btn:hover{border-color:#25D366;color:#25D366}
+.hd-actions{display:flex;gap:8px}
+.nav-btn{background:transparent;border:1px solid #30363d;color:#8b949e;padding:5px 11px;border-radius:8px;cursor:pointer;font-size:12px;text-decoration:none;display:inline-flex;align-items:center}
+.nav-btn:hover{border-color:#25D366;color:#25D366}
 .stats{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap}
 .stat{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:7px 14px;font-size:12px;color:#8b949e}
 .stat b{display:block;font-size:20px;color:#f0f6fc}
@@ -93,7 +96,10 @@ body{background:#0d1117;color:#e6edf3;font-family:-apple-system,BlinkMacSystemFo
 <div class="hd">
   <div class="hd-top">
     <div class="hd-title">📱 IPTV <span>Follow-Up</span></div>
-    <button class="settings-btn" onclick="openSettings()">⚙️ Settings</button>
+    <div class="hd-actions">
+      <a class="nav-btn" href="/trial">🔑 Logins</a>
+      <button class="settings-btn" onclick="openSettings()">⚙️ Settings</button>
+    </div>
   </div>
   <div class="stats">
     <div class="stat"><b id="st-total">—</b>Total</div>

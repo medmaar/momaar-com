@@ -38,6 +38,16 @@
 
   .container { width: 100%; max-width: 580px; }
 
+  .topnav { display: flex; justify-content: flex-end; margin-bottom: 18px; }
+  .topnav a {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12.5px; font-weight: 600; color: var(--muted);
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 20px; padding: 7px 14px; text-decoration: none;
+    transition: all .15s;
+  }
+  .topnav a:hover { color: var(--text); border-color: var(--border2); }
+
   .logo {
     display: flex;
     align-items: center;
@@ -207,6 +217,10 @@
 </head>
 <body>
 <div class="container">
+
+  <div class="topnav">
+    <a href="/followup">💬 Follow-up →</a>
+  </div>
 
   <div class="logo">
     <div class="logo-dot">
