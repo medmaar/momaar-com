@@ -233,7 +233,10 @@
   </div>
 
   <div class="card">
-    <div class="field-label">M3U LINK FROM PANEL</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+      <div class="field-label" style="margin-bottom:0">M3U LINK FROM PANEL</div>
+      <button id="clearBtn" onclick="clearInput()" style="display:none;font-size:11px;font-weight:600;color:#f0997b;background:rgba(216,90,48,.1);border:1px solid rgba(216,90,48,.25);border-radius:6px;padding:4px 10px;cursor:pointer;transition:all .15s">✕ Clear</button>
+    </div>
     <div style="font-size:11px;color:#888;margin-bottom:6px">Paste one or multiple links — one per line</div>
     <textarea id="m3uInput" placeholder="http://panel.example.com/get.php?username=abc123&password=xyz789&type=m3u_plus&output=ts
 http://panel.example.com/get.php?username=def456&password=ghi789&type=m3u_plus&output=ts" spellcheck="false" style="min-height:100px"></textarea>
@@ -305,8 +308,16 @@ function pick(s) {
 
 document.getElementById('m3uInput').addEventListener('input', () => {
   document.getElementById('errMsg').style.display = 'none';
+  document.getElementById('clearBtn').style.display = document.getElementById('m3uInput').value ? 'inline-block' : 'none';
   checkReady();
 });
+
+function clearInput() {
+  document.getElementById('m3uInput').value = '';
+  document.getElementById('clearBtn').style.display = 'none';
+  document.getElementById('errMsg').style.display = 'none';
+  checkReady();
+}
 
 function checkReady() {
   const val = document.getElementById('m3uInput').value.trim();
