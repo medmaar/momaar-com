@@ -38,15 +38,9 @@
 
   .container { width: 100%; max-width: 580px; }
 
-  .topnav { display: flex; justify-content: flex-end; margin-bottom: 18px; }
-  .topnav a {
-    display: inline-flex; align-items: center; gap: 6px;
-    font-size: 12.5px; font-weight: 600; color: var(--muted);
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 20px; padding: 7px 14px; text-decoration: none;
-    transition: all .15s;
-  }
-  .topnav a:hover { color: var(--text); border-color: var(--border2); }
+  .page-nav { display: flex; justify-content: center; gap: 10px; margin-bottom: 24px; flex-wrap: wrap; }
+  .pnav-btn { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--muted); background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 8px 18px; text-decoration: none; transition: all .15s; }
+  .pnav-btn:hover { color: var(--text); border-color: rgba(253,3,34,.5); }
 
   .logo {
     display: flex;
@@ -218,9 +212,11 @@
 <body>
 <div class="container">
 
-  <div class="topnav">
-    <a href="/followup">💬 Follow-up →</a>
-  </div>
+  <nav class="page-nav">
+    <a class="pnav-btn" href="/trial">🔑 Logins</a>
+    <a class="pnav-btn" href="/followup">💬 Follow-up</a>
+    <a class="pnav-btn" href="/whatsapp">📱 WhatsApp</a>
+  </nav>
 
   <div class="logo">
     <div class="logo-dot">
@@ -285,8 +281,8 @@ const SERVERS = {
   trex: {
     label: 'Trex',
     badge: 'badge-trex',
-    portals: ['http://mag.trexlive.me', 'http://line.trxdnscloud.ru'],
-    m3uBase: 'http://mag.trexlive.me'
+    portals: ['http://it.fanjerseysonline.com', 'http://vpn.fanjerseysonline.com', 'http://line.trxdnscloud.ru'],
+    m3uBase: 'http://it.fanjerseysonline.com'
   },
   dino: {
     label: 'Dino',

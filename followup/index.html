@@ -88,16 +88,25 @@ body{background:#0d1117;color:#e6edf3;font-family:-apple-system,BlinkMacSystemFo
 /* ── Toast ── */
 .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#25D366;color:#000;padding:9px 20px;border-radius:20px;font-size:13px;font-weight:700;opacity:0;transition:opacity .25s;z-index:999;white-space:nowrap;pointer-events:none}
 .toast.show{opacity:1}
+
+/* ── Page nav ── */
+.page-nav{display:flex;justify-content:center;gap:8px;padding:10px 0;margin-bottom:12px;flex-wrap:wrap}
+.pnav-btn{display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:600;color:#8b949e;background:#0d1117;border:1px solid #30363d;border-radius:20px;padding:7px 16px;text-decoration:none;transition:all .15s}
+.pnav-btn:hover{color:#e6edf3;border-color:#25D366}
 </style>
 </head>
 <body>
 
 <!-- ── Header ────────────────────────────────── -->
 <div class="hd">
+  <nav class="page-nav">
+    <a class="pnav-btn" href="/trial">🔑 Logins</a>
+    <a class="pnav-btn" href="/followup">💬 Follow-up</a>
+    <a class="pnav-btn" href="/whatsapp">📱 WhatsApp</a>
+  </nav>
   <div class="hd-top">
     <div class="hd-title">📱 IPTV <span>Follow-Up</span></div>
     <div class="hd-actions">
-      <a class="nav-btn" href="/trial">🔑 Logins</a>
       <button class="settings-btn" onclick="openSettings()">⚙️ Settings</button>
     </div>
   </div>
