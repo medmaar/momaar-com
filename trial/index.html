@@ -31,15 +31,15 @@
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     min-height: 100vh;
     display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    padding: 40px 16px 80px;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0 0 80px;
   }
 
-  .container { width: 100%; max-width: 580px; }
+  .container { width: 100%; max-width: 580px; align-self: center; padding: 24px 16px 0; }
 
   /* === PAGE HEADER === */
-  .page-header{background:linear-gradient(160deg,#1e0606 0%,var(--surface) 100%);border:1px solid var(--border);border-top:3px solid var(--accent);border-radius:16px 16px 0 0;overflow:hidden;margin-bottom:20px}
+  .page-header{background:linear-gradient(160deg,#1e0606 0%,var(--surface) 100%);border-top:3px solid var(--accent);overflow:hidden}
   .ph-identity{display:flex;align-items:center;gap:14px;padding:20px 20px 16px}
   .ph-icon{width:50px;height:50px;background:linear-gradient(135deg,#3d0808 0%,#fd0322 100%);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;box-shadow:0 4px 22px rgba(253,3,34,.4);flex-shrink:0}
   .ph-text{flex:1}
@@ -197,28 +197,27 @@
   }
 
   @media (max-width: 480px) {
-    body { padding: 24px 12px 60px; }
+    .container { padding: 16px 12px 0; }
     .card { padding: 18px; }
   }
 </style>
 </head>
 <body>
-<div class="container">
-
-  <div class="page-header">
-    <div class="ph-identity">
-      <div class="ph-icon">🔑</div>
-      <div class="ph-text">
-        <div class="ph-title">Logins</div>
-        <div class="ph-sub">Format &amp; send IPTV credentials</div>
-      </div>
+<div class="page-header">
+  <div class="ph-identity">
+    <div class="ph-icon">🔑</div>
+    <div class="ph-text">
+      <div class="ph-title">Logins</div>
+      <div class="ph-sub">Format &amp; send IPTV credentials</div>
     </div>
-    <nav class="page-nav">
-      <a class="pnav-btn active" href="/trial">🔑 Logins</a>
-      <a class="pnav-btn" href="/followup">💬 Follow-up</a>
-      <a class="pnav-btn" href="/whatsapp">📱 WhatsApp</a>
-    </nav>
   </div>
+  <nav class="page-nav">
+    <a class="pnav-btn active" href="/trial">🔑 Logins</a>
+    <a class="pnav-btn" href="/followup">💬 Follow-up</a>
+    <a class="pnav-btn" href="/whatsapp">📱 WhatsApp</a>
+  </nav>
+</div>
+<div class="container">
 
   <div class="card">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
