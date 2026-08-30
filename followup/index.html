@@ -11,21 +11,15 @@
 body{background:#0d1117;color:#e6edf3;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh}
 
 /* ── Header ── */
-.hd{background:#161b22;border-bottom:1px solid #30363d;padding:14px 16px;position:sticky;top:0;z-index:100}
-.hd-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-.hd-title{font-size:17px;font-weight:700}
-.hd-title span{color:#25D366}
-.settings-btn{background:transparent;border:1px solid #30363d;color:#8b949e;padding:5px 11px;border-radius:8px;cursor:pointer;font-size:12px}
+.hd{background:#161b22;border-bottom:1px solid #30363d;padding:0;position:sticky;top:0;z-index:100}
+.settings-btn{background:transparent;border:1px solid #30363d;color:#8b949e;padding:5px 11px;border-radius:8px;cursor:pointer;font-size:12px;flex-shrink:0}
 .settings-btn:hover{border-color:#25D366;color:#25D366}
-.hd-actions{display:flex;gap:8px}
-.nav-btn{background:transparent;border:1px solid #30363d;color:#8b949e;padding:5px 11px;border-radius:8px;cursor:pointer;font-size:12px;text-decoration:none;display:inline-flex;align-items:center}
-.nav-btn:hover{border-color:#25D366;color:#25D366}
-.stats{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.stats{display:flex;gap:10px;margin-bottom:0;flex-wrap:wrap;padding:10px 14px}
 .stat{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:7px 14px;font-size:12px;color:#8b949e}
 .stat b{display:block;font-size:20px;color:#f0f6fc}
 .stat.s-pend b{color:#f59e0b}
 .stat.s-done b{color:#25D366}
-.filters{display:flex;gap:7px;flex-wrap:wrap}
+.filters{display:flex;gap:7px;flex-wrap:wrap;padding:6px 14px 12px}
 .fb{background:transparent;border:1px solid #30363d;color:#8b949e;padding:5px 13px;border-radius:20px;cursor:pointer;font-size:12px;transition:all .15s}
 .fb.on{background:#25D366;border-color:#25D366;color:#000;font-weight:700}
 
@@ -89,26 +83,38 @@ body{background:#0d1117;color:#e6edf3;font-family:-apple-system,BlinkMacSystemFo
 .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#25D366;color:#000;padding:9px 20px;border-radius:20px;font-size:13px;font-weight:700;opacity:0;transition:opacity .25s;z-index:999;white-space:nowrap;pointer-events:none}
 .toast.show{opacity:1}
 
-/* ── Page nav ── */
-.page-nav{display:flex;justify-content:center;gap:8px;padding:10px 0;margin-bottom:12px;flex-wrap:wrap}
-.pnav-btn{display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:600;color:#8b949e;background:#0d1117;border:1px solid #30363d;border-radius:20px;padding:7px 16px;text-decoration:none;transition:all .15s}
-.pnav-btn:hover{color:#e6edf3;border-color:#25D366}
+/* ── Page Header ── */
+.page-header{background:linear-gradient(160deg,#051a0c 0%,#161b22 100%);border-top:3px solid #25D366;overflow:hidden}
+.ph-identity{display:flex;align-items:center;gap:14px;padding:16px 16px 14px}
+.ph-icon{width:46px;height:46px;background:linear-gradient(135deg,#0a2d16 0%,#25D366 100%);border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:23px;box-shadow:0 4px 18px rgba(37,211,102,.3);flex-shrink:0}
+.ph-text{flex:1}
+.ph-title{font-size:20px;font-weight:800;letter-spacing:-.3px;color:#f0f6fc;line-height:1.1}
+.ph-sub{font-size:12px;color:#8b949e;margin-top:4px}
+.page-nav{display:flex;border-top:1px solid #21262d}
+.pnav-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:10px 4px;font-size:12.5px;font-weight:600;color:#8b949e;text-decoration:none;white-space:nowrap;border-bottom:2px solid transparent;border-right:1px solid #21262d;transition:all .18s}
+.pnav-btn:last-child{border-right:none}
+.pnav-btn:hover{color:#e6edf3;background:rgba(255,255,255,.02)}
+.pnav-btn.active{color:#25D366;border-bottom-color:#25D366;background:rgba(37,211,102,.05)}
 </style>
 </head>
 <body>
 
 <!-- ── Header ────────────────────────────────── -->
 <div class="hd">
-  <nav class="page-nav">
-    <a class="pnav-btn" href="/trial">🔑 Logins</a>
-    <a class="pnav-btn" href="/followup">💬 Follow-up</a>
-    <a class="pnav-btn" href="/whatsapp">📱 WhatsApp</a>
-  </nav>
-  <div class="hd-top">
-    <div class="hd-title">📱 IPTV <span>Follow-Up</span></div>
-    <div class="hd-actions">
+  <div class="page-header">
+    <div class="ph-identity">
+      <div class="ph-icon">💬</div>
+      <div class="ph-text">
+        <div class="ph-title">Follow-Up</div>
+        <div class="ph-sub">Track and contact trial users</div>
+      </div>
       <button class="settings-btn" onclick="openSettings()">⚙️ Settings</button>
     </div>
+    <nav class="page-nav">
+      <a class="pnav-btn" href="/trial">🔑 Logins</a>
+      <a class="pnav-btn active" href="/followup">💬 Follow-up</a>
+      <a class="pnav-btn" href="/whatsapp">📱 WhatsApp</a>
+    </nav>
   </div>
   <div class="stats">
     <div class="stat"><b id="st-total">—</b>Total</div>

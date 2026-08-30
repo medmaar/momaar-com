@@ -38,25 +38,18 @@
 
   .container { width: 100%; max-width: 580px; }
 
-  .page-nav { display: flex; justify-content: center; gap: 10px; margin-bottom: 24px; flex-wrap: wrap; }
-  .pnav-btn { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--muted); background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 8px 18px; text-decoration: none; transition: all .15s; }
-  .pnav-btn:hover { color: var(--text); border-color: rgba(253,3,34,.5); }
-
-  .logo {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 36px;
-  }
-  .logo-dot {
-    width: 28px; height: 28px;
-    background: var(--accent);
-    border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .logo-dot svg { width: 16px; height: 16px; fill: #fff; }
-  .logo-text { font-size: 15px; font-weight: 600; color: var(--text); }
-  .logo-sub { font-size: 13px; color: var(--muted); margin-top: 1px; }
+  /* === PAGE HEADER === */
+  .page-header{background:linear-gradient(160deg,#1e0606 0%,var(--surface) 100%);border:1px solid var(--border);border-top:3px solid var(--accent);border-radius:16px 16px 0 0;overflow:hidden;margin-bottom:20px}
+  .ph-identity{display:flex;align-items:center;gap:14px;padding:20px 20px 16px}
+  .ph-icon{width:50px;height:50px;background:linear-gradient(135deg,#3d0808 0%,#fd0322 100%);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;box-shadow:0 4px 22px rgba(253,3,34,.4);flex-shrink:0}
+  .ph-text{flex:1}
+  .ph-title{font-size:22px;font-weight:800;letter-spacing:-.4px;color:var(--text);line-height:1.1}
+  .ph-sub{font-size:12px;color:var(--muted);margin-top:4px;letter-spacing:.1px}
+  .page-nav{display:flex;border-top:1px solid var(--border)}
+  .pnav-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:11px 4px;font-size:12.5px;font-weight:600;color:var(--muted);text-decoration:none;white-space:nowrap;border-bottom:2px solid transparent;border-right:1px solid var(--border);transition:all .18s}
+  .pnav-btn:last-child{border-right:none}
+  .pnav-btn:hover{color:var(--text);background:rgba(255,255,255,.03)}
+  .pnav-btn.active{color:var(--accent);border-bottom-color:var(--accent);background:rgba(253,3,34,.06)}
 
   .card {
     background: var(--surface);
@@ -212,20 +205,19 @@
 <body>
 <div class="container">
 
-  <nav class="page-nav">
-    <a class="pnav-btn" href="/trial">🔑 Logins</a>
-    <a class="pnav-btn" href="/followup">💬 Follow-up</a>
-    <a class="pnav-btn" href="/whatsapp">📱 WhatsApp</a>
-  </nav>
-
-  <div class="logo">
-    <div class="logo-dot">
-      <svg viewBox="0 0 24 24"><path d="M21 7L9 19l-5.5-5.5 1.41-1.41L9 16.17 19.59 5.59 21 7z"/></svg>
+  <div class="page-header">
+    <div class="ph-identity">
+      <div class="ph-icon">🔑</div>
+      <div class="ph-text">
+        <div class="ph-title">Logins</div>
+        <div class="ph-sub">Format &amp; send IPTV credentials</div>
+      </div>
     </div>
-    <div>
-      <div class="logo-text">IPTV Creds</div>
-      <div class="logo-sub">Credential formatter</div>
-    </div>
+    <nav class="page-nav">
+      <a class="pnav-btn active" href="/trial">🔑 Logins</a>
+      <a class="pnav-btn" href="/followup">💬 Follow-up</a>
+      <a class="pnav-btn" href="/whatsapp">📱 WhatsApp</a>
+    </nav>
   </div>
 
   <div class="card">
