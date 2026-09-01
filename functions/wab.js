@@ -6,5 +6,5 @@ export async function onRequest(context) {
   }
   // Server-side redirect to WA Business — Safari treats this as a fresh
   // navigation from a new URL, resetting its "repeatedly trying" counter.
-  return Response.redirect('whatsappbusiness://send?phone=%2B' + phone, 302);
+  return Response.redirect('whatsappbusiness://send?phone=' + phone, 302);
 }
