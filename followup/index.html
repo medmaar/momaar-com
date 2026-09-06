@@ -492,6 +492,33 @@ function waLink(trial) {
   return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
 }
 
+function getOS() {
+  var ua = navigator.userAgent || '';
+  if (/android/i.test(ua)) return 'android';
+  return 'other';
+}
+
+function waButtons(trial, done) {
+  const phone = trial.phone.replace(/[^0-9]/g, '');
+  const msg   = buildMsg(trial.site);
+  const id    = trial.id.replace(/'/g, "\\'");
+  const cls   = `wabtn ${done ? 'resend' : ''}`;
+  const lbl   = done ? 'Re-send' : '';
+
+  if (getOS() === 'android') {
+    const pUrl = `intent://send?phone=${phone}&text=${encodeURIComponent(msg)}#Intent;scheme=whatsapp;package=com.whatsapp;action=android.intent.action.VIEW;end`;
+    const bUrl = `intent://send?phone=${phone}&text=${encodeURIComponent(msg)}#Intent;scheme=whatsapp;package=com.whatsapp.w4b;action=android.intent.action.VIEW;end`;
+    const bStyle = done ? 'color:#128C7E;border-color:#128C7E' : 'background:#128C7E';
+    return `<div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">
+      <a href="${pUrl}" class="${cls}" onclick="onWA('${id}',event)" style="font-size:12px;padding:7px 10px">💬 ${lbl || 'WA'}</a>
+      <a href="${bUrl}" class="${cls}" onclick="onWA('${id}',event)" style="font-size:12px;padding:7px 10px;${bStyle}">🏢 ${lbl || 'WA Biz'}</a>
+    </div>`;
+  }
+
+  const url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+  return `<a href="${url}" class="${cls}" onclick="onWA('${id}',event)" target="_blank">💬 ${done ? 'Re-send' : 'WhatsApp'}</a>`;
+}
+
 // ================================================================
 // RENDER
 // ================================================================
@@ -508,7 +535,6 @@ function render() {
     const cfg  = SITE_CFG[t.site] || { brand: t.site || '?', color: '#6e7681', lang: 'en' };
     const done = !!contacts[t.id];
     const cd   = contacts[t.id] || {};
-    const link = waLink(t);
 
     return `<div class="card ${done ? 'done' : ''}" id="card-${CSS.escape(t.id)}">
       ${done ? '<span class="badge-sent">✓ Sent</span>' : ''}
@@ -524,12 +550,7 @@ function render() {
           ${done && cd.note ? `<div class="cnote">${cd.note}</div>` : ''}
           ${done ? `<button class="undo" onclick="undo('${t.id.replace(/'/g,"\\'")}')">↩ Undo</button>` : ''}
         </div>
-        <a href="${link}"
-           class="wabtn ${done ? 'resend' : ''}"
-           onclick="onWA('${t.id.replace(/'/g,"\\'")}', event)"
-           target="_blank">
-          💬 ${done ? 'Re-send' : 'WhatsApp'}
-        </a>
+        ${waButtons(t, done)}
       </div>
     </div>`;
   }).join('');
