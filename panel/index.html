@@ -167,9 +167,9 @@ select.fi{cursor:pointer}
 <div class="overlay" id="settingsOverlay">
   <div class="modal">
     <h3>⚙️ Message Settings</h3>
-    <p class="sub">These settings apply to the "Copy message" button on each card.</p>
+    <p class="sub">Language is detected automatically from the phone number (+33 → French, +49 → German, +47 → Norwegian, everything else → English). Set a fallback for numbers without a recognised code.</p>
 
-    <label class="fl">Default Language</label>
+    <label class="fl">Fallback language (when no phone or unknown code)</label>
     <select class="fi" id="cfg-lang">
       <option value="en">English</option>
       <option value="fr">French</option>
@@ -270,7 +270,17 @@ function urgency(line) {
   return 'ok';
 }
 
-// ── PHONE EXTRACT ──────────────────────────────────
+// ── PHONE → LANGUAGE AUTO-DETECTION ───────────────
+function langFromPhone(phone) {
+  if (!phone) return null;
+  const d = phone.replace(/\D/g, '');
+  if (d.startsWith('33') || d.startsWith('32'))          return 'fr'; // France, Belgium
+  if (d.startsWith('49') || d.startsWith('43') || d.startsWith('41')) return 'de'; // Germany, Austria, Switzerland
+  if (d.startsWith('47') || d.startsWith('46') || d.startsWith('45') || d.startsWith('358')) return 'no'; // Norway, Sweden, Denmark, Finland
+  return 'en'; // default
+}
+
+
 function extractPhone(note) {
   if (!note) return null;
   const m = note.match(/(\+?[\d][\d\s.\-()\u00AD]{6,}\d)/);
@@ -281,7 +291,8 @@ function extractPhone(note) {
 
 // ── MESSAGES ───────────────────────────────────────
 function buildMsg(line) {
-  const lang    = line.lang || cfg.lang || 'en';
+  const phone   = extractPhone(line.notes);
+  const lang    = langFromPhone(phone) || cfg.lang || 'en';
   const tmpl    = MSGS[lang] || MSGS.en;
   const days    = daysUntil(line.expDate);
   const dateStr = fmtDate(line.expDate);
@@ -402,14 +413,12 @@ function mapRows(rows) {
     const client  = get('client','name','username','user','client name');
     const expRaw  = get('expiry_date','expiry date','exp_date','exp date','expiration','expire','expiry','exp');
     const notes   = get('notes','note','comment','remark','phone','description');
-    const lang    = get('lang','language');
     if (!client && !expRaw) return null;
     return {
       _key:    'r' + i,
       client:  client || '(row ' + (i+1) + ')',
       expDate: parseDate(expRaw),
       notes:   notes,
-      lang:    lang || '',
     };
   }).filter(Boolean);
 }
@@ -417,11 +426,11 @@ function mapRows(rows) {
 // ── TEMPLATE DOWNLOAD ──────────────────────────────
 function downloadTemplate() {
   const csv = [
-    'client,expiry_date,notes,lang',
-    'John Smith,2026-09-15,+1 416 906 2446 one year,en',
-    'Marie Dupont,2025-08-01,+33 6 12 34 56 78 renouveler,fr',
-    'Hans Müller,2026-01-20,+49 151 23456789 ein Jahr,de',
-    'Lars Hansen,2025-10-05,+47 123 456 78 ett år,no',
+    'client,expiry_date,notes',
+    'John Smith,2026-09-15,+1 416 906 2446 one year',
+    'Marie Dupont,2025-08-01,+33 6 12 34 56 78 one year',
+    'Hans Müller,2026-01-20,+49 151 23456789 one year',
+    'Lars Hansen,2025-10-05,+47 123 456 78 one year',
   ].join('\n');
   const a   = document.createElement('a');
   a.href    = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
