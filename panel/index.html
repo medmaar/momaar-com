@@ -216,19 +216,57 @@ let lines     = [];
 let contacted = {};
 let filter    = 'all';
 let cfg       = { lang: 'en', website: '' };
+let serverSync = false; // true once KV is confirmed working
+
+// ── SERVER SYNC ────────────────────────────────────
+async function saveToServer() {
+  try {
+    await fetch('/panel-store', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ lines: lines.map(l => ({...l, expDate: l.expDate?.toISOString()||null})), contacted }),
+    });
+    serverSync = true;
+  } catch(_) {}
+}
+
+async function loadFromServer() {
+  try {
+    const res  = await fetch('/panel-store');
+    const data = await res.json();
+    if (!data || data.setup_needed) return false; // KV not set up yet
+    if (data.lines && Array.isArray(data.lines) && data.lines.length) {
+      lines     = data.lines.map(l => ({...l, expDate: l.expDate ? new Date(l.expDate) : null}));
+      contacted = data.contacted || {};
+      // Also keep local cache fresh
+      localStorage.setItem('panel_lines',     JSON.stringify(data.lines));
+      localStorage.setItem('panel_contacted', JSON.stringify(contacted));
+      serverSync = true;
+      return true;
+    }
+  } catch(_) {}
+  return false;
+}
 
 // ── INIT ───────────────────────────────────────────
-function init() {
-  contacted = JSON.parse(localStorage.getItem('panel_contacted') || '{}');
-  cfg       = JSON.parse(localStorage.getItem('panel_cfg')       || '{"lang":"en","website":""}');
+async function init() {
+  cfg = JSON.parse(localStorage.getItem('panel_cfg') || '{"lang":"en","website":""}');
   updateTodayDisplay();
-  const saved = localStorage.getItem('panel_lines');
-  if (saved) {
+
+  // Show local data immediately (fast)
+  const localLines     = localStorage.getItem('panel_lines');
+  const localContacted = localStorage.getItem('panel_contacted');
+  if (localLines) {
     try {
-      lines = JSON.parse(saved).map(l => ({ ...l, expDate: l.expDate ? new Date(l.expDate) : null }));
+      lines     = JSON.parse(localLines).map(l => ({...l, expDate: l.expDate ? new Date(l.expDate) : null}));
+      contacted = JSON.parse(localContacted || '{}');
       updateStats(); render();
     } catch(_) {}
   }
+
+  // Then pull fresh data from server (syncs across devices)
+  const gotServer = await loadFromServer();
+  if (gotServer) { updateStats(); render(); }
 }
 
 function updateTodayDisplay() {
@@ -317,6 +355,12 @@ async function importFile(input) {
   if (!file) return;
   input.value = '';
 
+  // If we already have data, download the current Excel (with contacted column) first
+  if (lines.length > 0) {
+    const go = confirm('Before importing the new file, download the current list with the "Contacted" column?\n\nClick OK to download first, then Cancel this import and re-click Import once you have saved the file.\nClick Cancel to skip the download and import directly.');
+    if (go) { await downloadExcel(); }
+  }
+
   const ext = file.name.split('.').pop().toLowerCase();
   let rows = [];
 
@@ -330,8 +374,7 @@ async function importFile(input) {
   const parsed = mapRows(rows);
   if (!parsed.length) { toast('Could not read columns — check file has Expire and Notes columns'); return; }
 
-  // Merge: keep contacted status for lines that match by _key (server:username)
-  // so re-uploading an updated Excel never wipes your contacted history
+  // Keep contacted history: any username that matched before keeps its contacted date
   lines = parsed;
 
   lines.sort((a,b) => {
@@ -341,9 +384,11 @@ async function importFile(input) {
     return da-db;
   });
 
-  localStorage.setItem('panel_lines', JSON.stringify(lines.map(l => ({...l, expDate: l.expDate?.toISOString()||null}))));
+  localStorage.setItem('panel_lines',     JSON.stringify(lines.map(l => ({...l, expDate: l.expDate?.toISOString()||null}))));
+  localStorage.setItem('panel_contacted', JSON.stringify(contacted));
   updateStats(); render();
-  toast('✓ ' + lines.length + ' rows imported — contacted history preserved');
+  saveToServer(); // sync to KV so all devices see the new data
+  toast('✓ ' + lines.length + ' rows imported — syncing to all devices…');
 }
 
 function parseCSV(file) {
@@ -585,12 +630,14 @@ function markDone(key, showToast) {
   contacted[key] = new Date().toISOString();
   localStorage.setItem('panel_contacted', JSON.stringify(contacted));
   updateStats(); render();
+  saveToServer();
   if (showToast) toast('Marked as contacted ✓');
 }
 function unmark(key) {
   delete contacted[key];
   localStorage.setItem('panel_contacted', JSON.stringify(contacted));
   updateStats(); render();
+  saveToServer();
   toast('Unmarked ↩');
 }
 function copyMsg(key) {
