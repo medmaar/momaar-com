@@ -165,8 +165,9 @@ select.fi{cursor:pointer}
 
   <div class="sb">
     <input type="search" id="q" placeholder="🔍  Search username, note or phone…" oninput="render()">
-    <button class="rbtn" onclick="document.getElementById('csvFile').click()" title="Import CSV / Excel">📥 Import</button>
+    <button class="rbtn" onclick="document.getElementById('csvFile').click()" title="Import CSV / Excel">📥 CSV/XLS</button>
     <input type="file" id="csvFile" accept=".csv,.xlsx,.xls" style="display:none" onchange="importFile(this)">
+    <button class="rbtn" onclick="document.getElementById('pasteOverlay').classList.add('open')" title="Paste JSON from bookmarklet">📋 Paste</button>
     <button class="rbtn" onclick="loadAll()" title="Refresh from API">🔄</button>
   </div>
 
@@ -191,9 +192,38 @@ select.fi{cursor:pointer}
     <p class="sub">Add one entry per panel. The API path uses <code style="background:#0d1117;padding:1px 4px;border-radius:4px;font-size:11px">{KEY}</code> as a placeholder for your API key.</p>
     <div id="panelCfgList"></div>
     <button class="btn-add-panel" onclick="addTempPanel()">+ Add Another Panel</button>
+
+    <!-- Bookmarklet section -->
+    <div style="margin-top:16px;padding:14px;background:#0d1117;border:1px solid #21262d;border-radius:10px">
+      <div style="font-size:12px;font-weight:700;color:#f59e0b;margin-bottom:8px">📥 Scrape tvpluspanel.ru directly</div>
+      <p style="font-size:11px;color:#6e7681;margin-bottom:10px;line-height:1.5">
+        1. Log in to tvpluspanel.ru &amp; go to Users → Lines<br>
+        2. Drag this button to your bookmarks bar:<br>
+      </p>
+      <a id="bkmLink" href="#" style="display:block;background:#f59e0b;color:#000;padding:7px 12px;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;text-align:center;margin-bottom:8px">📥 Scrape TVPLUS Lines</a>
+      <p style="font-size:11px;color:#6e7681;line-height:1.5">
+        3. Click it while on that page — it copies JSON<br>
+        4. Come back here and click <b style="color:#e6edf3">Import → Paste JSON</b>
+      </p>
+    </div>
+
     <div class="modal-btns">
       <button class="btn-cancel" onclick="closeSettings()">Cancel</button>
       <button class="btn-save"   onclick="saveSettings()">Save &amp; Reload</button>
+    </div>
+  </div>
+</div>
+
+<!-- JSON Paste Modal -->
+<div class="overlay" id="pasteOverlay">
+  <div class="modal">
+    <h3>📋 Paste JSON from Bookmarklet</h3>
+    <p class="sub">Run the bookmarklet on tvpluspanel.ru, then paste the copied JSON below.</p>
+    <textarea id="pasteJson" placeholder='[{"username":"abc123","exp_date":"2026-09-07","notes":"+1 234 567 8900 one year"}]'
+      style="width:100%;height:120px;background:#0d1117;border:1px solid #30363d;color:#e6edf3;padding:10px;border-radius:8px;font-size:12px;font-family:monospace;resize:vertical;outline:none;margin-top:8px"></textarea>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="document.getElementById('pasteOverlay').classList.remove('open')">Cancel</button>
+      <button class="btn-save"   onclick="importPasted()">Import</button>
     </div>
   </div>
 </div>
@@ -316,36 +346,41 @@ async function loadAll() {
 }
 
 async function loadPanel(panel) {
-  // All builtin panels go through our server-side Pages Function (/api-proxy).
-  // This runs on Cloudflare's servers — no CORS issues, API keys never exposed to browser.
-  const proxyUrl = '/api-proxy?p=' + encodeURIComponent(panel.id);
   const isBuiltin = BUILTIN_PANELS.some(b => b.id === panel.id);
-
   let res, text;
+
   if (isBuiltin) {
-    // Use our Pages Function
-    res  = await fetch(proxyUrl, { signal: AbortSignal.timeout(20000) });
-    text = await res.text();
+    try {
+      res  = await fetch('/api-proxy?p=' + panel.id);
+      text = await res.text();
+    } catch(e) { throw new Error('Network: ' + e.message); }
+
+    if (!text || !text.trim()) {
+      throw new Error(
+        'Empty response (HTTP ' + (res?.status||'?') + ').\n' +
+        'Pages Function may not be deployed — use Import below.'
+      );
+    }
+    let data;
+    try { data = JSON.parse(text); } catch(_) {
+      throw new Error('HTTP ' + res.status + ' non-JSON:\n' + text.slice(0, 300));
+    }
+    if (data?.error) {
+      const lines = (data.debug||[]).map(d =>
+        '• ' + d.path + ': ' + (d.error || 'HTTP ' + d.status + ' — ' + (d.preview||d.api_error||''))
+      ).join('\n');
+      throw new Error(data.error + (lines ? '\n' + lines : ''));
+    }
+    return parseApiResponse(data);
+
   } else {
-    // User-added panel: fall back to CORS proxy with ?url= format
-    const apiUrl = (panel.url || '').replace(/\/+$/, '') + (panel.apiPath || '').replace('{KEY}', panel.apiKey || '');
-    res  = await fetch(CORS_PROXY + '?url=' + encodeURIComponent(apiUrl), { signal: AbortSignal.timeout(20000) });
+    const apiUrl = (panel.url||'').replace(/\/+$/,'') + (panel.apiPath||'').replace('{KEY}', panel.apiKey||'');
+    res  = await fetch(CORS_PROXY + '?url=' + encodeURIComponent(apiUrl));
     text = await res.text();
+    let data;
+    try { data = JSON.parse(text); } catch(_) { throw new Error('Not JSON: ' + text.slice(0,200)); }
+    return parseApiResponse(data);
   }
-
-  let data;
-  try { data = JSON.parse(text); } catch(_) {
-    throw new Error('Response is not JSON.\nRaw (first 400 chars):\n' + text.slice(0, 400));
-  }
-
-  if (data && data.error) {
-    const debugLines = (data.debug || []).map(d =>
-      `• ${d.path || d.action}: HTTP ${d.status || '?'} — ${d.preview || d.error || ''}`
-    ).join('\n');
-    throw new Error(data.error + (debugLines ? '\n\n' + debugLines : ''));
-  }
-
-  return parseApiResponse(data);
 }
 
 // ═══════════════════════════════════════════════════
@@ -665,9 +700,38 @@ function switchPanel(id) {
 // ═══════════════════════════════════════════════════
 // SETTINGS MODAL
 // ═══════════════════════════════════════════════════
+function importPasted() {
+  const raw = (document.getElementById('pasteJson')?.value || '').trim();
+  if (!raw) { toast('Paste the JSON first'); return; }
+  let rows;
+  try { rows = JSON.parse(raw); } catch(_) { toast('Invalid JSON'); return; }
+  if (!Array.isArray(rows)) rows = [rows];
+  const parsed = mapRows(rows);
+  if (!parsed.length) { toast('No usable rows found'); return; }
+  const IMPORT_ID = 'import';
+  allLines = allLines.filter(l => l.panelId !== IMPORT_ID);
+  parsed.forEach(l => { l.panelId = IMPORT_ID; l.panelName = '📥 Import'; });
+  allLines.push(...parsed);
+  allLines.sort((a,b)=>{const da=daysUntil(a.expDate),db=daysUntil(b.expDate);if(da===null&&db===null)return 0;if(da===null)return 1;if(db===null)return-1;return da-db;});
+  localStorage.setItem('iptv_panel_imported', JSON.stringify(parsed));
+  panelStatus[IMPORT_ID] = 'ok';
+  if (!panels.find(p => p.id === IMPORT_ID))
+    panels.push({ id: IMPORT_ID, name: '📥 Import', website: '', lang: 'en', isBuiltin: false });
+  document.getElementById('pasteOverlay').classList.remove('open');
+  document.getElementById('pasteJson').value = '';
+  renderPanelTabs(); updateStats(); render();
+  toast('✓ Imported ' + parsed.length + ' lines');
+}
+
+function buildBookmarklet() {
+  return `javascript:(function(){var rows=[];document.querySelectorAll('table tbody tr').forEach(function(tr){var tds=tr.querySelectorAll('td');if(tds.length<4)return;var hdrs=[];var hrow=tr.closest('table').querySelector('thead tr');if(hrow)hrow.querySelectorAll('th').forEach(function(th){hdrs.push(th.textContent.trim().toLowerCase());});function col(name){var i=hdrs.findIndex(function(h){return h.includes(name);});return i>=0?(tds[i]?.textContent||'').trim():'';};var username=col('username')||col('user')||tds[1]?.textContent.trim();var expire=col('expire')||col('expiry')||col('exp')||tds[3]?.textContent.trim();var notes=col('notes')||col('note')||col('comment')||'';if(username&&username.length>2)rows.push({username:username,exp_date:expire,notes:notes});});if(!rows.length){alert('No rows found. Go to the Lines list page.');return;}var json=JSON.stringify(rows);navigator.clipboard.writeText(json).then(function(){alert('Copied '+rows.length+' lines! Go to momaar.com/panel and click Paste.');}).catch(function(){prompt('Copy:',json);});})();`;
+}
+
 function openSettings() {
-  tempPanels = JSON.parse(JSON.stringify(panels));
+  tempPanels = JSON.parse(JSON.stringify(panels.filter(p => p.id !== 'import')));
   renderPanelCfg();
+  const bk = document.getElementById('bkmLink');
+  if (bk) bk.href = buildBookmarklet();
   document.getElementById('settingsOverlay').classList.add('open');
 }
 function closeSettings() { document.getElementById('settingsOverlay').classList.remove('open'); }
