@@ -5,79 +5,70 @@
 <link rel="icon" type="image/png" href="/favicon.png">
 <link rel="shortcut icon" href="/favicon.ico">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>IPTV Panel Manager</title>
+<title>Panel Manager</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#0d1117;color:#e6edf3;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh}
 
-/* ── Header ── */
-.hd{background:#161b22;border-bottom:1px solid #30363d;position:sticky;top:0;z-index:100}
-.page-header{background:linear-gradient(160deg,#051624 0%,#161b22 100%);border-top:3px solid #3b82f6;overflow:hidden}
-.ph-identity{display:flex;align-items:center;gap:14px;padding:20px 20px 16px}
-.ph-icon{width:50px;height:50px;background:linear-gradient(135deg,#0a1a3d 0%,#3b82f6 100%);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;box-shadow:0 4px 22px rgba(59,130,246,.3);flex-shrink:0}
+.page-header{background:linear-gradient(160deg,#051624 0%,#161b22 100%);border-top:3px solid #3b82f6}
+.ph-identity{display:flex;align-items:center;gap:14px;padding:18px 16px 14px}
+.ph-icon{width:46px;height:46px;background:linear-gradient(135deg,#0a1a3d 0%,#3b82f6 100%);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
 .ph-text{flex:1}
-.ph-title{font-size:22px;font-weight:800;letter-spacing:-.4px;color:#f0f6fc;line-height:1.1}
-.ph-sub{font-size:12px;color:#8b949e;margin-top:4px}
-.settings-btn{background:transparent;border:1px solid #30363d;color:#8b949e;padding:5px 11px;border-radius:8px;cursor:pointer;font-size:12px;flex-shrink:0}
-.settings-btn:hover{border-color:#3b82f6;color:#3b82f6}
+.ph-title{font-size:20px;font-weight:800;color:#f0f6fc}
+.ph-sub{font-size:11px;color:#8b949e;margin-top:2px}
+.ph-btns{display:flex;gap:8px}
+.ph-btn{background:transparent;border:1px solid #30363d;color:#8b949e;padding:5px 11px;border-radius:8px;cursor:pointer;font-size:12px;white-space:nowrap}
+.ph-btn:hover{border-color:#3b82f6;color:#3b82f6}
+.ph-btn.green{border-color:#25D366;color:#25D366}
+.ph-btn.green:hover{background:rgba(37,211,102,.1)}
+
 .page-nav{display:flex;border-top:1px solid #21262d}
 .pnav-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:11px 4px;font-size:12.5px;font-weight:600;color:#8b949e;text-decoration:none;white-space:nowrap;border-bottom:2px solid transparent;border-right:1px solid #21262d;transition:all .18s}
 .pnav-btn:last-child{border-right:none}
 .pnav-btn.active{color:#3b82f6;border-bottom-color:#3b82f6;background:rgba(59,130,246,.05)}
 
-/* ── Panel tabs ── */
-.panel-tabs{display:none;gap:6px;padding:10px 14px;background:#0d1117;border-bottom:1px solid #21262d;overflow-x:auto;-webkit-overflow-scrolling:touch}
-.ptab{background:transparent;border:1px solid #30363d;color:#8b949e;padding:5px 14px;border-radius:20px;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap;flex-shrink:0}
-.ptab.on{background:#3b82f6;border-color:#3b82f6;color:#fff}
-.ptab.err{border-color:#ef4444;color:#ef4444}
+.toolbar{display:flex;gap:8px;padding:10px 14px;background:#161b22;border-bottom:1px solid #30363d;align-items:center;flex-wrap:wrap}
+.today-badge{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:5px 12px;font-size:12px;color:#8b949e;white-space:nowrap}
+.today-badge b{color:#f0f6fc}
+.tb-btn{background:#0d1117;border:1px solid #30363d;color:#8b949e;padding:7px 12px;border-radius:8px;cursor:pointer;font-size:13px;white-space:nowrap}
+.tb-btn:hover{border-color:#3b82f6;color:#3b82f6}
+.tb-btn.primary{border-color:#3b82f6;color:#3b82f6;font-weight:700}
+.sb{flex:1;min-width:140px}
+.sb input{width:100%;background:#0d1117;border:1px solid #30363d;color:#e6edf3;padding:7px 12px;border-radius:8px;font-size:13px;outline:none}
+.sb input:focus{border-color:#3b82f6}
 
-/* ── Stats ── */
 .stats{display:flex;gap:8px;padding:10px 14px;flex-wrap:wrap}
 .stat{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:6px 12px;font-size:11px;color:#8b949e;text-align:center}
 .stat b{display:block;font-size:18px;font-weight:700;color:#f0f6fc}
 .stat.s-exp b{color:#ef4444}.stat.s-soon b{color:#f59e0b}.stat.s-ok b{color:#25D366}.stat.s-done b{color:#60a5fa}
 
-/* ── Search / Filters ── */
-.sb{display:flex;gap:8px;padding:8px 14px;background:#161b22;border-bottom:1px solid #30363d;align-items:center}
-.sb input{flex:1;background:#0d1117;border:1px solid #30363d;color:#e6edf3;padding:7px 12px;border-radius:8px;font-size:13px;outline:none}
-.sb input:focus{border-color:#3b82f6}
-.rbtn{background:#0d1117;border:1px solid #30363d;color:#8b949e;padding:7px 11px;border-radius:8px;cursor:pointer;font-size:13px;flex-shrink:0}
-.rbtn:hover{border-color:#3b82f6;color:#3b82f6}
-.filters{display:flex;gap:6px;flex-wrap:wrap;padding:8px 14px 10px;background:#161b22;border-bottom:1px solid #30363d}
+.filters{display:flex;gap:6px;flex-wrap:wrap;padding:6px 14px 10px;background:#161b22;border-bottom:1px solid #30363d}
 .fb{background:transparent;border:1px solid #30363d;color:#8b949e;padding:4px 11px;border-radius:20px;cursor:pointer;font-size:12px;transition:all .15s}
 .fb.on{font-weight:700}
 .fb.f-all.on{background:#30363d;color:#e6edf3;border-color:#30363d}
 .fb.f-exp.on{background:#ef4444;border-color:#ef4444;color:#fff}
 .fb.f-soon.on{background:#f59e0b;border-color:#f59e0b;color:#000}
-.fb.f-warn.on{background:#eab308;border-color:#eab308;color:#000}
 .fb.f-ok.on{background:#25D366;border-color:#25D366;color:#000}
 .fb.f-done.on{background:#60a5fa;border-color:#60a5fa;color:#000}
 
-/* ── Cards ── */
 .list{padding:12px 14px}
 .card{background:#161b22;border:1px solid #30363d;border-left:4px solid #30363d;border-radius:10px;padding:14px;margin-bottom:10px;position:relative;transition:opacity .2s}
 .card.u-expired{border-left-color:#ef4444;background:#1c1015}
 .card.u-soon{border-left-color:#f59e0b;background:#1c1810}
 .card.u-warn{border-left-color:#eab308;background:#1a1a10}
 .card.u-ok{border-left-color:#25D366}
-.card.u-disabled{border-left-color:#6e7681;opacity:.55}
 .card.contacted{opacity:.45}
+.badge-done{position:absolute;top:10px;right:12px;background:#25D366;color:#000;font-size:10px;font-weight:700;padding:2px 8px;border-radius:12px}
 
-.badges{position:absolute;top:10px;right:12px;display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}
-.badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:12px}
-.badge-panel{color:#fff;background:#3b82f6}
-.badge-done{background:#25D366;color:#000}
-
-.row1{display:flex;align-items:center;gap:8px;margin-bottom:8px;padding-right:90px;flex-wrap:wrap}
-.uname{font-size:15px;font-weight:700;color:#f0f6fc;font-family:monospace}
+.row1{display:flex;align-items:center;gap:8px;margin-bottom:8px;padding-right:80px;flex-wrap:wrap}
+.cname{font-size:15px;font-weight:700;color:#f0f6fc}
 .ebadge{padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;white-space:nowrap}
 .eb-exp{background:#ef444418;color:#ef4444;border:1px solid #ef444440}
 .eb-soon{background:#f59e0b18;color:#f59e0b;border:1px solid #f59e0b40}
 .eb-warn{background:#eab30818;color:#eab308;border:1px solid #eab30840}
 .eb-ok{background:#25D36618;color:#25D366;border:1px solid #25D36640}
-.eb-dis{background:#6e768118;color:#6e7681;border:1px solid #6e768140}
 
-.row2{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.row2{display:flex;align-items:flex-start;gap:10px}
 .meta{flex:1;min-width:0}
 .exp-date{font-size:12px;color:#8b949e;margin-bottom:3px}
 .note-txt{font-size:11px;color:#6e7681;word-break:break-word;margin-top:2px}
@@ -87,143 +78,111 @@ body{background:#0d1117;color:#e6edf3;font-family:-apple-system,BlinkMacSystemFo
 .btns{display:flex;flex-direction:column;gap:5px;flex-shrink:0}
 .abtn{display:flex;align-items:center;justify-content:center;gap:4px;border:none;border-radius:8px;padding:7px 11px;font-size:12px;font-weight:700;cursor:pointer;text-decoration:none;white-space:nowrap}
 .abtn.wa{background:#25D366;color:#000}
-.abtn.wab{background:#128C7E;color:#fff}
 .abtn.copy{background:transparent;border:1px solid #30363d;color:#8b949e;font-size:11px;padding:5px 9px}
 .abtn.copy:hover{border-color:#60a5fa;color:#60a5fa}
 .abtn.mark{background:transparent;border:1px solid #30363d;color:#8b949e;font-size:11px;padding:5px 9px}
 .abtn.mark:hover{border-color:#25D366;color:#25D366}
 .abtn.marked{background:rgba(37,211,102,.15);border-color:#25D366;color:#25D366}
 .btn-row{display:flex;gap:5px}
-.no-phone{font-size:10px;color:#6e7681;margin-top:4px;text-align:right}
 
-/* ── States ── */
-.loading{text-align:center;padding:48px 20px;color:#6e7681}
-.spin{width:30px;height:30px;border:3px solid #30363d;border-top-color:#3b82f6;border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 14px}
-@keyframes spin{to{transform:rotate(360deg)}}
-.empty{text-align:center;padding:50px 20px;color:#6e7681}
-.err-box{background:#1c1010;border:1px solid #5a1a1a;border-radius:10px;padding:16px;margin:0 0 10px;color:#ff9b9b;font-size:13px;line-height:1.5}
-.err-box b{display:block;margin-bottom:4px}
-.err-box code{display:block;background:#0d1117;border-radius:6px;padding:6px;margin-top:6px;font-size:10px;word-break:break-all;color:#8b949e}
+.empty{text-align:center;padding:60px 20px;color:#6e7681}
+.empty-icon{font-size:40px;margin-bottom:12px}
 
-/* ── Modal ── */
+/* Settings modal */
 .overlay{display:none;position:fixed;inset:0;background:#000a;z-index:200;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto}
 .overlay.open{display:flex}
-.modal{background:#161b22;border:1px solid #30363d;border-radius:14px;padding:20px;width:100%;max-width:500px;margin-top:40px;margin-bottom:40px}
+.modal{background:#161b22;border:1px solid #30363d;border-radius:14px;padding:20px;width:100%;max-width:420px;margin-top:40px}
 .modal h3{font-size:16px;font-weight:700;margin-bottom:4px}
-.modal .sub{font-size:12px;color:#8b949e;margin-bottom:16px}
-.pcfg{background:#0d1117;border:1px solid #21262d;border-radius:10px;padding:14px;margin-bottom:12px}
-.pcfg-hd{font-size:12px;font-weight:700;color:#8b949e;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
-.rm-btn{background:transparent;border:none;color:#ef4444;cursor:pointer;font-size:12px;padding:0}
-.fl{display:block;font-size:11px;color:#6e7681;margin-bottom:4px;font-weight:600;margin-top:10px}
-.fl:first-of-type{margin-top:0}
-.fi{width:100%;background:#161b22;border:1px solid #30363d;color:#e6edf3;padding:7px 10px;border-radius:7px;font-size:12px;outline:none}
+.modal .sub{font-size:12px;color:#8b949e;margin-bottom:14px}
+.fl{display:block;font-size:11px;color:#6e7681;margin-bottom:4px;font-weight:600;margin-top:12px}
+.fi{width:100%;background:#0d1117;border:1px solid #30363d;color:#e6edf3;padding:7px 10px;border-radius:7px;font-size:13px;outline:none}
 .fi:focus{border-color:#3b82f6}
 select.fi{cursor:pointer}
-.hint{font-size:10px;color:#6e7681;margin-top:3px;line-height:1.4}
 .modal-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
 .modal-btns button{padding:8px 18px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:700}
 .btn-cancel{background:#21262d;color:#e6edf3}
 .btn-save{background:#3b82f6;color:#fff}
-.btn-add-panel{width:100%;padding:9px;border-radius:8px;border:1px dashed #30363d;background:transparent;color:#60a5fa;cursor:pointer;font-size:13px;font-weight:600;margin-top:4px}
-.btn-add-panel:hover{border-color:#60a5fa}
 
-/* ── Toast ── */
 .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#3b82f6;color:#fff;padding:9px 20px;border-radius:20px;font-size:13px;font-weight:700;opacity:0;transition:opacity .25s;z-index:999;white-space:nowrap;pointer-events:none}
 .toast.show{opacity:1}
 </style>
 </head>
 <body>
 
-<div class="hd">
-  <div class="page-header">
-    <div class="ph-identity">
-      <div class="ph-icon">📊</div>
-      <div class="ph-text">
-        <div class="ph-title">Panel Manager</div>
-        <div class="ph-sub">All IPTV lines — expiry tracking &amp; renewals</div>
-      </div>
-      <button class="settings-btn" onclick="openSettings()">⚙️ Panels</button>
+<div class="page-header">
+  <div class="ph-identity">
+    <div class="ph-icon">📊</div>
+    <div class="ph-text">
+      <div class="ph-title">Panel Manager</div>
+      <div class="ph-sub">Import your lines, track expiry, contact clients</div>
     </div>
-    <nav class="page-nav">
-      <a class="pnav-btn" href="/trial">🔑 Logins</a>
-      <a class="pnav-btn" href="/followup">💬 Follow-up</a>
-      <a class="pnav-btn" href="/whatsapp">📱 WhatsApp</a>
-      <a class="pnav-btn active" href="/panel">📊 Panel</a>
-    </nav>
+    <div class="ph-btns">
+      <button class="ph-btn green" onclick="downloadTemplate()">⬇ Template</button>
+      <button class="ph-btn" onclick="openSettings()">⚙️</button>
+    </div>
   </div>
+  <nav class="page-nav">
+    <a class="pnav-btn" href="/trial">🔑 Logins</a>
+    <a class="pnav-btn" href="/followup">💬 Follow-up</a>
+    <a class="pnav-btn" href="/whatsapp">📱 WhatsApp</a>
+    <a class="pnav-btn active" href="/panel">📊 Panel</a>
+  </nav>
+</div>
 
-  <div class="panel-tabs" id="panelTabs"></div>
+<div class="toolbar">
+  <div class="today-badge">Today: <b id="todayDisplay"></b></div>
+  <button class="tb-btn primary" onclick="document.getElementById('xlFile').click()">📥 Import Excel / CSV</button>
+  <input type="file" id="xlFile" accept=".csv,.xlsx,.xls" style="display:none" onchange="importFile(this)">
+  <div class="sb"><input type="search" id="q" placeholder="🔍  Search client, note or phone…" oninput="render()"></div>
+</div>
 
-  <div class="stats">
-    <div class="stat s-exp"><b id="st-exp">—</b>Expired</div>
-    <div class="stat s-soon"><b id="st-soon">—</b>&lt;7d</div>
-    <div class="stat"><b id="st-warn">—</b>&lt;30d</div>
-    <div class="stat s-ok"><b id="st-ok">—</b>Active</div>
-    <div class="stat s-done"><b id="st-done">—</b>Contacted</div>
-    <div class="stat"><b id="st-total">—</b>Total</div>
-  </div>
+<div class="stats">
+  <div class="stat s-exp"><b id="st-exp">0</b>Expired</div>
+  <div class="stat s-soon"><b id="st-soon">0</b>&lt;7d</div>
+  <div class="stat"><b id="st-warn">0</b>&lt;30d</div>
+  <div class="stat s-ok"><b id="st-ok">0</b>Active</div>
+  <div class="stat s-done"><b id="st-done">0</b>Contacted</div>
+  <div class="stat"><b id="st-total">0</b>Total</div>
+</div>
 
-  <div class="sb">
-    <input type="search" id="q" placeholder="🔍  Search username, note or phone…" oninput="render()">
-    <button class="rbtn" onclick="document.getElementById('csvFile').click()" title="Import CSV / Excel">📥 CSV/XLS</button>
-    <input type="file" id="csvFile" accept=".csv,.xlsx,.xls" style="display:none" onchange="importFile(this)">
-    <button class="rbtn" onclick="document.getElementById('pasteOverlay').classList.add('open')" title="Paste JSON from bookmarklet">📋 Paste</button>
-    <button class="rbtn" onclick="loadAll()" title="Refresh from API">🔄</button>
-  </div>
-
-  <div class="filters">
-    <button class="fb f-all on" onclick="setFilter('all',this)">All</button>
-    <button class="fb f-exp"    onclick="setFilter('expired',this)">🔴 Expired</button>
-    <button class="fb f-soon"   onclick="setFilter('soon',this)">🟠 &lt;7d</button>
-    <button class="fb f-warn"   onclick="setFilter('warn',this)">🟡 &lt;30d</button>
-    <button class="fb f-ok"     onclick="setFilter('active',this)">🟢 Active</button>
-    <button class="fb f-done"   onclick="setFilter('contacted',this)">✅ Contacted</button>
-  </div>
+<div class="filters">
+  <button class="fb f-all on" onclick="setFilter('all',this)">All</button>
+  <button class="fb f-exp"    onclick="setFilter('expired',this)">🔴 Expired</button>
+  <button class="fb f-soon"   onclick="setFilter('soon',this)">🟠 &lt;7d</button>
+  <button class="fb"          onclick="setFilter('warn',this)">🟡 &lt;30d</button>
+  <button class="fb f-ok"     onclick="setFilter('active',this)">🟢 Active</button>
+  <button class="fb f-done"   onclick="setFilter('contacted',this)">✅ Contacted</button>
 </div>
 
 <div class="list" id="list">
-  <div class="loading"><div class="spin"></div>Loading panels…</div>
-</div>
-
-<!-- Settings Modal -->
-<div class="overlay" id="settingsOverlay">
-  <div class="modal">
-    <h3>⚙️ Panel Configuration</h3>
-    <p class="sub">Add one entry per panel. The API path uses <code style="background:#0d1117;padding:1px 4px;border-radius:4px;font-size:11px">{KEY}</code> as a placeholder for your API key.</p>
-    <div id="panelCfgList"></div>
-    <button class="btn-add-panel" onclick="addTempPanel()">+ Add Another Panel</button>
-
-    <!-- Bookmarklet section -->
-    <div style="margin-top:16px;padding:14px;background:#0d1117;border:1px solid #21262d;border-radius:10px">
-      <div style="font-size:12px;font-weight:700;color:#f59e0b;margin-bottom:8px">📥 Scrape tvpluspanel.ru directly</div>
-      <p style="font-size:11px;color:#6e7681;margin-bottom:10px;line-height:1.5">
-        1. Log in to tvpluspanel.ru &amp; go to Users → Lines<br>
-        2. Drag this button to your bookmarks bar:<br>
-      </p>
-      <a id="bkmLink" href="#" style="display:block;background:#f59e0b;color:#000;padding:7px 12px;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;text-align:center;margin-bottom:8px">📥 Scrape TVPLUS Lines</a>
-      <p style="font-size:11px;color:#6e7681;line-height:1.5">
-        3. Click it while on that page — it copies JSON<br>
-        4. Come back here and click <b style="color:#e6edf3">Import → Paste JSON</b>
-      </p>
-    </div>
-
-    <div class="modal-btns">
-      <button class="btn-cancel" onclick="closeSettings()">Cancel</button>
-      <button class="btn-save"   onclick="saveSettings()">Save &amp; Reload</button>
-    </div>
+  <div class="empty">
+    <div class="empty-icon">📂</div>
+    <b>No data yet</b><br><br>
+    Click <b style="color:#3b82f6">⬇ Template</b> to download the Excel template,<br>
+    fill it in, then click <b style="color:#3b82f6">📥 Import Excel / CSV</b>.
   </div>
 </div>
 
-<!-- JSON Paste Modal -->
-<div class="overlay" id="pasteOverlay">
+<!-- Settings modal -->
+<div class="overlay" id="settingsOverlay">
   <div class="modal">
-    <h3>📋 Paste JSON from Bookmarklet</h3>
-    <p class="sub">Run the bookmarklet on tvpluspanel.ru, then paste the copied JSON below.</p>
-    <textarea id="pasteJson" placeholder='[{"username":"abc123","exp_date":"2026-09-07","notes":"+1 234 567 8900 one year"}]'
-      style="width:100%;height:120px;background:#0d1117;border:1px solid #30363d;color:#e6edf3;padding:10px;border-radius:8px;font-size:12px;font-family:monospace;resize:vertical;outline:none;margin-top:8px"></textarea>
+    <h3>⚙️ Message Settings</h3>
+    <p class="sub">These settings apply to the "Copy message" button on each card.</p>
+
+    <label class="fl">Default Language</label>
+    <select class="fi" id="cfg-lang">
+      <option value="en">English</option>
+      <option value="fr">French</option>
+      <option value="de">German</option>
+      <option value="no">Norwegian</option>
+    </select>
+
+    <label class="fl">Your website (appended to message — optional)</label>
+    <input class="fi" id="cfg-website" placeholder="e.g. maplestreamtv.ca">
+
     <div class="modal-btns">
-      <button class="btn-cancel" onclick="document.getElementById('pasteOverlay').classList.remove('open')">Cancel</button>
-      <button class="btn-save"   onclick="importPasted()">Import</button>
+      <button class="btn-cancel" onclick="closeSettings()">Cancel</button>
+      <button class="btn-save" onclick="saveSettings()">Save</button>
     </div>
   </div>
 </div>
@@ -231,205 +190,78 @@ select.fi{cursor:pointer}
 <div class="toast" id="toast"></div>
 
 <script>
-// ═══════════════════════════════════════════════════
-// CONFIG
-// ═══════════════════════════════════════════════════
-const CORS_PROXY = 'https://iptv-cors-proxy.medmaar.workers.dev';
-const CFG_VERSION = 2; // bump when BUILTIN_PANELS changes
-
-// ── Hardcoded panels (always present, never lost) ──
-// API keys live server-side in functions/api-proxy.js — not here.
-// Add new panels to BOTH files. Bump CFG_VERSION each time.
-const BUILTIN_PANELS = [
-  { id: 'tvplus_1', name: 'Dino #1', website: '', lang: 'en', isBuiltin: true },
-  { id: 'tvplus_2', name: 'Dino #2', website: '', lang: 'en', isBuiltin: true }
-  // → New panels added here as user provides them
-];
-
-const EXPIRY_MSGS = {
+// ── CONFIG ─────────────────────────────────────────
+const MSGS = {
   en: {
-    expired:  "Hello!\n\nYour IPTV subscription has expired.\n\nTo renew and restore access to all your channels, just reply YES and I'll get it reactivated right away.",
-    expiring: "Hello!\n\nYour IPTV subscription expires in [DAYS] day[S] ([DATE]).\n\nTo renew before it expires and avoid any interruption, just reply YES and I'll take care of everything."
+    expired:  "Hello!\n\nYour IPTV subscription expired on [DATE].\n\nTo renew and restore access to all your channels, just reply YES and I'll get it reactivated right away.",
+    expiring: "Hello!\n\nYour IPTV subscription expires in [DAYS] day[S] ([DATE]).\n\nTo avoid any interruption, just reply YES and I'll renew it for you."
   },
   fr: {
-    expired:  "Bonjour !\n\nVotre abonnement IPTV a expiré.\n\nPour le renouveler et retrouver accès à toutes vos chaînes, répondez simplement OUI et je m'en occupe immédiatement.",
-    expiring: "Bonjour !\n\nVotre abonnement IPTV expire dans [DAYS] jour[S] ([DATE]).\n\nPour renouveler avant l'expiration et éviter toute coupure, répondez OUI."
+    expired:  "Bonjour !\n\nVotre abonnement IPTV a expiré le [DATE].\n\nPour le renouveler et retrouver accès à toutes vos chaînes, répondez simplement OUI.",
+    expiring: "Bonjour !\n\nVotre abonnement IPTV expire dans [DAYS] jour[S] ([DATE]).\n\nPour éviter toute coupure, répondez OUI et je m'en occupe immédiatement."
   },
   de: {
-    expired:  "Hallo!\n\nIhr IPTV-Abonnement ist abgelaufen.\n\nUm es zu verlängern und wieder Zugang zu allen Sendern zu erhalten, antworten Sie einfach JA und ich kümmere mich sofort darum.",
-    expiring: "Hallo!\n\nIhr IPTV-Abonnement läuft in [DAYS] Tag[S] ab ([DATE]).\n\nAntworten Sie JA, um rechtzeitig zu verlängern und eine Unterbrechung zu vermeiden."
+    expired:  "Hallo!\n\nIhr IPTV-Abonnement ist am [DATE] abgelaufen.\n\nUm es zu verlängern und wieder Zugang zu erhalten, antworten Sie einfach JA.",
+    expiring: "Hallo!\n\nIhr IPTV-Abonnement läuft in [DAYS] Tag[S] ab ([DATE]).\n\nUm eine Unterbrechung zu vermeiden, antworten Sie JA."
   },
   no: {
-    expired:  "Hei!\n\nIPTV-abonnementet ditt har utløpt.\n\nFor å fornye og gjenopprette tilgang til alle kanalene, svar bare JA så ordner jeg det med en gang.",
-    expiring: "Hei!\n\nIPTV-abonnementet ditt utløper om [DAYS] dag[S] ([DATE]).\n\nSvar JA for å fornye i tide og unngå avbrudd."
+    expired:  "Hei!\n\nIPTV-abonnementet ditt utløp den [DATE].\n\nFor å fornye og gjenopprette tilgangen, svar bare JA.",
+    expiring: "Hei!\n\nIPTV-abonnementet ditt utløper om [DAYS] dag[S] ([DATE]).\n\nFor å unngå avbrudd, svar JA."
   }
 };
 
-// ═══════════════════════════════════════════════════
-// STATE
-// ═══════════════════════════════════════════════════
-let panels       = [];
-let allLines     = [];
-let panelStatus  = {};      // id -> 'loading'|'ok'|'error:msg'
-let contacted    = {};      // lineKey -> ISO timestamp
-let filter       = 'all';
-let activePanelId = 'all';
-let tempPanels   = [];
+// ── STATE ──────────────────────────────────────────
+let lines     = [];
+let contacted = {};
+let filter    = 'all';
+let cfg       = { lang: 'en', website: '' };
 
-// ═══════════════════════════════════════════════════
-// BOOT
-// ═══════════════════════════════════════════════════
+// ── INIT ───────────────────────────────────────────
 function init() {
-  contacted = JSON.parse(localStorage.getItem('iptv_panel_contacted') || '{}');
-
-  // Always merge BUILTIN_PANELS so new hardcoded keys are never lost.
-  const saved      = JSON.parse(localStorage.getItem('iptv_panel_cfgs') || 'null');
-  const savedVer   = Number(localStorage.getItem('iptv_panel_cfg_ver') || 0);
-  let extra        = [];
-  if (saved && savedVer === CFG_VERSION) {
-    const builtinIds = new Set(BUILTIN_PANELS.map(p => p.id));
-    extra = saved.filter(p => !builtinIds.has(p.id));
-    BUILTIN_PANELS.forEach(bp => {
-      const override = saved.find(p => p.id === bp.id);
-      if (override) {
-        bp.name    = override.name    || bp.name;
-        bp.website = override.website || bp.website;
-        bp.brand   = override.brand   || bp.brand;
-        bp.lang    = override.lang    || bp.lang;
-      }
-    });
-  }
-  panels = [...BUILTIN_PANELS, ...extra];
-
-  // Restore any previously imported CSV/Excel lines
-  loadPersistedImport();
-
-  renderPanelTabs();
-  loadAll();
-}
-
-// ═══════════════════════════════════════════════════
-// LOAD
-// ═══════════════════════════════════════════════════
-async function loadAll() {
-  allLines = [];
-  panelStatus = {};
-  panels.forEach(p => { panelStatus[p.id] = 'loading'; });
-  renderPanelTabs();
-  document.getElementById('list').innerHTML = '<div class="loading"><div class="spin"></div>Fetching panel data…</div>';
-
-  const results = await Promise.allSettled(panels.map(p => loadPanel(p)));
-
-  results.forEach((r, i) => {
-    const p = panels[i];
-    if (r.status === 'fulfilled') {
-      r.value.forEach(row => { row.panelId = p.id; row.panelName = p.name; });
-      allLines.push(...r.value);
-      panelStatus[p.id] = 'ok';
-    } else {
-      panelStatus[p.id] = 'error:' + (r.reason?.message || 'Unknown');
-    }
-  });
-
-  // Sort: expired first (most overdue), then soonest expiry, unknowns last
-  allLines.sort((a, b) => {
-    const da = daysUntil(a.expDate), db = daysUntil(b.expDate);
-    if (da === null && db === null) return 0;
-    if (da === null) return 1;
-    if (db === null) return -1;
-    return da - db;
-  });
-
-  renderPanelTabs();
-  updateStats();
-  render();
-}
-
-async function loadPanel(panel) {
-  const isBuiltin = BUILTIN_PANELS.some(b => b.id === panel.id);
-  let res, text;
-
-  if (isBuiltin) {
+  contacted = JSON.parse(localStorage.getItem('panel_contacted') || '{}');
+  cfg       = JSON.parse(localStorage.getItem('panel_cfg')       || '{"lang":"en","website":""}');
+  updateTodayDisplay();
+  const saved = localStorage.getItem('panel_lines');
+  if (saved) {
     try {
-      res  = await fetch('/api-proxy?p=' + panel.id);
-      text = await res.text();
-    } catch(e) { throw new Error('Network: ' + e.message); }
-
-    if (!text || !text.trim()) {
-      throw new Error(
-        'Empty response (HTTP ' + (res?.status||'?') + ').\n' +
-        'Pages Function may not be deployed — use Import below.'
-      );
-    }
-    let data;
-    try { data = JSON.parse(text); } catch(_) {
-      throw new Error('HTTP ' + res.status + ' non-JSON:\n' + text.slice(0, 300));
-    }
-    if (data?.error) {
-      const lines = (data.debug||[]).map(d =>
-        '• ' + d.path + ': ' + (d.error || 'HTTP ' + d.status + ' — ' + (d.preview||d.api_error||''))
-      ).join('\n');
-      throw new Error(data.error + (lines ? '\n' + lines : ''));
-    }
-    return parseApiResponse(data);
-
-  } else {
-    const apiUrl = (panel.url||'').replace(/\/+$/,'') + (panel.apiPath||'').replace('{KEY}', panel.apiKey||'');
-    res  = await fetch(CORS_PROXY + '?url=' + encodeURIComponent(apiUrl));
-    text = await res.text();
-    let data;
-    try { data = JSON.parse(text); } catch(_) { throw new Error('Not JSON: ' + text.slice(0,200)); }
-    return parseApiResponse(data);
+      lines = JSON.parse(saved).map(l => ({ ...l, expDate: l.expDate ? new Date(l.expDate) : null }));
+      updateStats(); render();
+    } catch(_) {}
   }
 }
 
-// ═══════════════════════════════════════════════════
-// PARSE API RESPONSE (handles common panel formats)
-// ═══════════════════════════════════════════════════
-function parseApiResponse(data) {
-  let raw = [];
-  if      (Array.isArray(data))                               raw = data;
-  else if (data.result   && Array.isArray(data.result))       raw = data.result;
-  else if (data.data     && Array.isArray(data.data))         raw = data.data;
-  else if (data.users    && Array.isArray(data.users))        raw = data.users;
-  else if (data.lines    && Array.isArray(data.lines))        raw = data.lines;
-  else if (data.response && Array.isArray(data.response))     raw = data.response;
-  else throw new Error('Unexpected API response format — got: ' + JSON.stringify(data).slice(0, 120));
-
-  return raw.map((l, i) => {
-    const idRaw = String(l.id || l.user_id || i);
-    const user  = l.username || l.user || '(unknown)';
-    return {
-      _key:     idRaw + '_' + user.replace(/[^a-z0-9]/gi, ''),
-      id:       idRaw,
-      username: user,
-      expDate:  parseDate(l.exp_date || l.expiry_date || l.expire || l.expiration || l.exp || ''),
-      notes:    (l.notes || l.note || l.comment || '').trim(),
-      enabled:  l.enabled !== undefined ? (l.enabled == 1 || l.enabled === true) : (l.status !== 'disabled' && l.status !== 'inactive'),
-      online:   Number(l.active_cons || l.connections || 0) > 0,
-      isTrial:  l.is_trial == 1 || l.trial === true,
-    };
-  });
+function updateTodayDisplay() {
+  document.getElementById('todayDisplay').textContent =
+    new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
 }
 
-function parseDate(raw) {
-  if (!raw || raw === '0' || raw === 0) return null;
-  const n = Number(raw);
-  if (!isNaN(n) && n > 1000000000 && String(raw).length <= 11) return new Date(n * 1000);
-  const d = new Date(raw);
-  return isNaN(d.getTime()) ? null : d;
-}
-
-// ═══════════════════════════════════════════════════
-// HELPERS
-// ═══════════════════════════════════════════════════
+// ── DATE UTILS ─────────────────────────────────────
 function daysUntil(date) {
   if (!date) return null;
   return Math.ceil((date.getTime() - Date.now()) / 86400000);
 }
 
+function fmtDate(date) {
+  if (!date) return '—';
+  return date.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+}
+
+function parseDate(raw) {
+  if (!raw) return null;
+  raw = String(raw).trim();
+  // Excel serial number
+  const n = Number(raw);
+  if (!isNaN(n) && n > 1000 && n < 100000) {
+    // Excel epoch: Jan 1, 1900 = day 1 (with leap-year bug correction)
+    return new Date(Math.round((n - 25569) * 86400000));
+  }
+  // Try ISO or common formats
+  const d = new Date(raw.replace(/(\d{2})\/(\d{2})\/(\d{4})/, '$3-$2-$1')
+                        .replace(/(\d{2})-(\d{2})-(\d{4})/, '$3-$2-$1'));
+  return isNaN(d.getTime()) ? null : d;
+}
+
 function urgency(line) {
-  if (!line.enabled) return 'disabled';
   const d = daysUntil(line.expDate);
   if (d === null) return 'unknown';
   if (d <= 0)  return 'expired';
@@ -438,376 +270,36 @@ function urgency(line) {
   return 'ok';
 }
 
+// ── PHONE EXTRACT ──────────────────────────────────
 function extractPhone(note) {
   if (!note) return null;
-  // Match phone numbers: optional + then at least 8 digits with separators
   const m = note.match(/(\+?[\d][\d\s.\-()\u00AD]{6,}\d)/);
   if (!m) return null;
   const raw = m[0].trim();
-  if ((raw.match(/\d/g) || []).length < 8) return null;
-  return raw;
+  return (raw.match(/\d/g)||[]).length >= 8 ? raw : null;
 }
 
-function fmtDate(date) {
-  if (!date) return 'Unknown';
-  return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-}
-
-// ═══════════════════════════════════════════════════
-// MESSAGES
-// ═══════════════════════════════════════════════════
+// ── MESSAGES ───────────────────────────────────────
 function buildMsg(line) {
-  const panel   = panels.find(p => p.id === line.panelId) || {};
-  const lang    = panel.lang || 'en';
-  const tmpl    = EXPIRY_MSGS[lang] || EXPIRY_MSGS.en;
+  const lang    = line.lang || cfg.lang || 'en';
+  const tmpl    = MSGS[lang] || MSGS.en;
   const days    = daysUntil(line.expDate);
-  const website = (panel.website || panel.url || '').replace(/^https?:\/\//, '');
+  const dateStr = fmtDate(line.expDate);
+  const website = cfg.website ? '\n\n' + cfg.website : '';
   let body;
 
-  if (days !== null && days <= 0) {
-    body = tmpl.expired;
-  } else if (days !== null) {
-    const dateStr = fmtDate(line.expDate);
+  if (days === null || days <= 0) {
+    body = tmpl.expired.replace('[DATE]', dateStr).replace('[DAYS]', Math.abs(days||0));
+  } else {
     body = tmpl.expiring
       .replace('[DAYS]', days)
       .replace('[S]', days === 1 ? '' : 's')
       .replace('[DATE]', dateStr);
-  } else {
-    body = tmpl.expired;
   }
-
-  return body + (website ? '\n\n' + website : '');
+  return body + website;
 }
 
-// ═══════════════════════════════════════════════════
-// WA LINKS
-// ═══════════════════════════════════════════════════
-function isAndroid() { return /android/i.test(navigator.userAgent); }
-
-function waHref(phone, msg, biz) {
-  const clean = phone.replace(/[^\d]/g, '');
-  if (isAndroid()) {
-    const pkg = biz ? 'com.whatsapp.w4b' : 'com.whatsapp';
-    return `intent://send?phone=${clean}&text=${encodeURIComponent(msg)}#Intent;scheme=whatsapp;package=${pkg};action=android.intent.action.VIEW;end`;
-  }
-  return `https://wa.me/${clean}?text=${encodeURIComponent(msg)}`;
-}
-
-// ═══════════════════════════════════════════════════
-// STATS
-// ═══════════════════════════════════════════════════
-function updateStats() {
-  const src = getFiltered('all');
-  const exp  = src.filter(l => urgency(l) === 'expired').length;
-  const soon = src.filter(l => urgency(l) === 'soon').length;
-  const warn = src.filter(l => urgency(l) === 'warn').length;
-  const ok   = src.filter(l => urgency(l) === 'ok').length;
-  const done = src.filter(l => !!contacted[l._key]).length;
-  document.getElementById('st-exp').textContent   = exp;
-  document.getElementById('st-soon').textContent  = soon;
-  document.getElementById('st-warn').textContent  = warn;
-  document.getElementById('st-ok').textContent    = ok;
-  document.getElementById('st-done').textContent  = done;
-  document.getElementById('st-total').textContent = src.length;
-}
-
-// ═══════════════════════════════════════════════════
-// FILTER
-// ═══════════════════════════════════════════════════
-function setFilter(f, btn) {
-  filter = f;
-  document.querySelectorAll('.fb').forEach(b => b.classList.remove('on'));
-  btn.classList.add('on');
-  render();
-}
-
-function getFiltered(overrideF) {
-  const q  = (document.getElementById('q')?.value || '').toLowerCase();
-  const f  = overrideF || filter;
-  let src  = allLines;
-  if (activePanelId !== 'all') src = src.filter(l => l.panelId === activePanelId);
-  return src.filter(l => {
-    if (q) {
-      const phone = extractPhone(l.notes) || '';
-      if (!l.username.toLowerCase().includes(q) && !l.notes.toLowerCase().includes(q) && !phone.includes(q)) return false;
-    }
-    const u    = urgency(l);
-    const done = !!contacted[l._key];
-    if (f === 'expired')   return u === 'expired';
-    if (f === 'soon')      return u === 'soon';
-    if (f === 'warn')      return u === 'warn';
-    if (f === 'active')    return u === 'ok';
-    if (f === 'contacted') return done;
-    return true;
-  });
-}
-
-// ═══════════════════════════════════════════════════
-// RENDER
-// ═══════════════════════════════════════════════════
-function render() {
-  const el     = document.getElementById('list');
-  const errors = panels.filter(p => (panelStatus[p.id] || '').startsWith('error'));
-  const list   = getFiltered();
-
-  let html = '';
-
-  // Show panel errors
-  if (errors.length) {
-    html += errors.map(p => {
-      const raw = (panelStatus[p.id] || '').replace('error:', '');
-      // raw may contain newlines with debug info
-      const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
-      const title = lines[0] || 'Unknown error';
-      const detail = lines.slice(1).join('\n');
-      const apiRef = p.isBuiltin
-        ? `/api-proxy?p=${p.id}  (server-side proxy)`
-        : `${p.url || '?'}${(p.apiPath || '').replace('{KEY}', '***')}`;
-      return `<div class="err-box">
-        <b>⚠️ ${p.name} — ${title}</b>
-        ${detail ? `<pre style="margin:6px 0;white-space:pre-wrap;font-size:10px;color:#8b949e">${detail}</pre>` : ''}
-        <code>${apiRef}</code>
-      </div>`;
-    }).join('');
-  }
-
-  if (!list.length) {
-    el.innerHTML = html + '<div class="empty">📭 No lines match this filter</div>';
-    return;
-  }
-
-  const multiPanel = panels.length > 1;
-
-  html += list.map(l => {
-    const u      = urgency(l);
-    const days   = daysUntil(l.expDate);
-    const phone  = extractPhone(l.notes);
-    const done   = !!contacted[l._key];
-    const msg    = buildMsg(l);
-    const ek     = l._key.replace(/'/g, "\\'");
-
-    // Expiry badge
-    let eLabel, eCls;
-    if (u === 'expired')  { eLabel = `Expired ${days !== null ? Math.abs(days)+'d ago' : ''}`; eCls = 'eb-exp'; }
-    else if (u === 'soon')   { eLabel = `${days}d left`; eCls = 'eb-soon'; }
-    else if (u === 'warn')   { eLabel = `${days}d left`; eCls = 'eb-warn'; }
-    else if (u === 'ok')     { eLabel = `${days}d left`; eCls = 'eb-ok'; }
-    else if (u === 'disabled') { eLabel = 'Disabled'; eCls = 'eb-dis'; }
-    else                   { eLabel = 'No expiry'; eCls = 'eb-dis'; }
-
-    // Contact buttons
-    let contactHtml;
-    if (phone) {
-      if (isAndroid()) {
-        contactHtml = `
-          <div class="btn-row">
-            <a class="abtn wa"  href="${waHref(phone,msg,false)}" onclick="markDone('${ek}')">💬 WA</a>
-            <a class="abtn wab" href="${waHref(phone,msg,true)}"  onclick="markDone('${ek}')">🏢 Biz</a>
-          </div>`;
-      } else {
-        contactHtml = `<a class="abtn wa" href="${waHref(phone,msg,false)}" target="_blank" onclick="markDone('${ek}')">💬 WhatsApp</a>`;
-      }
-    } else {
-      contactHtml = `<div class="no-phone">No phone in note</div>`;
-    }
-
-    return `<div class="card u-${u} ${done ? 'contacted' : ''}" id="card-${CSS.escape(l._key)}">
-      <div class="badges">
-        ${multiPanel ? `<span class="badge badge-panel">${l.panelName}</span>` : ''}
-        ${done ? '<span class="badge badge-done">✓ Done</span>' : ''}
-      </div>
-      <div class="row1">
-        <span class="uname">${l.username}</span>
-        <span class="ebadge ${eCls}">${eLabel}</span>
-        ${l.isTrial ? '<span class="ebadge eb-dis">Trial</span>' : ''}
-      </div>
-      <div class="row2">
-        <div class="meta">
-          <div class="exp-date">📅 ${fmtDate(l.expDate)}</div>
-          ${l.notes ? `<div class="note-txt">📝 ${l.notes}</div>` : ''}
-          ${phone   ? `<div class="phone-txt">📱 ${phone}</div>` : ''}
-          ${done    ? `<button class="undo-btn" onclick="unmark('${ek}')">↩ Undo</button>` : ''}
-        </div>
-        <div class="btns">
-          ${contactHtml}
-          <div class="btn-row">
-            <button class="abtn copy" onclick="copyMsg('${ek}')">📋 Copy msg</button>
-            <button class="abtn mark ${done ? 'marked' : ''}" onclick="${done ? `unmark('${ek}')` : `markDone('${ek}',true)`}">
-              ${done ? '✓ Done' : '✓ Mark'}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
-
-  el.innerHTML = html;
-}
-
-// ═══════════════════════════════════════════════════
-// ACTIONS
-// ═══════════════════════════════════════════════════
-function markDone(key, showToast) {
-  contacted[key] = new Date().toISOString();
-  localStorage.setItem('iptv_panel_contacted', JSON.stringify(contacted));
-  updateStats();
-  render();
-  if (showToast) toast('Marked as contacted ✓');
-}
-
-function unmark(key) {
-  delete contacted[key];
-  localStorage.setItem('iptv_panel_contacted', JSON.stringify(contacted));
-  updateStats();
-  render();
-  toast('Unmarked ↩');
-}
-
-function copyMsg(key) {
-  const line = allLines.find(l => l._key === key);
-  if (!line) return;
-  navigator.clipboard.writeText(buildMsg(line))
-    .then(() => toast('Message copied ✓'))
-    .catch(() => toast('Copy failed'));
-}
-
-// ═══════════════════════════════════════════════════
-// PANEL TABS
-// ═══════════════════════════════════════════════════
-function renderPanelTabs() {
-  const el = document.getElementById('panelTabs');
-  if (panels.length <= 1) { el.style.display = 'none'; return; }
-  el.style.display = 'flex';
-  const tabs = [
-    `<button class="ptab ${activePanelId === 'all' ? 'on' : ''}" onclick="switchPanel('all')">All</button>`,
-    ...panels.map(p => {
-      const s = panelStatus[p.id] || '';
-      const cls = activePanelId === p.id ? 'on' : s.startsWith('error') ? 'err' : '';
-      const icon = s === 'loading' ? '⏳ ' : s.startsWith('error') ? '⚠️ ' : '';
-      return `<button class="ptab ${cls}" onclick="switchPanel('${p.id}')">${icon}${p.name}</button>`;
-    })
-  ];
-  el.innerHTML = tabs.join('');
-}
-
-function switchPanel(id) {
-  activePanelId = id;
-  renderPanelTabs();
-  updateStats();
-  render();
-}
-
-// ═══════════════════════════════════════════════════
-// SETTINGS MODAL
-// ═══════════════════════════════════════════════════
-function importPasted() {
-  const raw = (document.getElementById('pasteJson')?.value || '').trim();
-  if (!raw) { toast('Paste the JSON first'); return; }
-  let rows;
-  try { rows = JSON.parse(raw); } catch(_) { toast('Invalid JSON'); return; }
-  if (!Array.isArray(rows)) rows = [rows];
-  const parsed = mapRows(rows);
-  if (!parsed.length) { toast('No usable rows found'); return; }
-  const IMPORT_ID = 'import';
-  allLines = allLines.filter(l => l.panelId !== IMPORT_ID);
-  parsed.forEach(l => { l.panelId = IMPORT_ID; l.panelName = '📥 Import'; });
-  allLines.push(...parsed);
-  allLines.sort((a,b)=>{const da=daysUntil(a.expDate),db=daysUntil(b.expDate);if(da===null&&db===null)return 0;if(da===null)return 1;if(db===null)return-1;return da-db;});
-  localStorage.setItem('iptv_panel_imported', JSON.stringify(parsed));
-  panelStatus[IMPORT_ID] = 'ok';
-  if (!panels.find(p => p.id === IMPORT_ID))
-    panels.push({ id: IMPORT_ID, name: '📥 Import', website: '', lang: 'en', isBuiltin: false });
-  document.getElementById('pasteOverlay').classList.remove('open');
-  document.getElementById('pasteJson').value = '';
-  renderPanelTabs(); updateStats(); render();
-  toast('✓ Imported ' + parsed.length + ' lines');
-}
-
-function buildBookmarklet() {
-  return `javascript:(function(){var rows=[];document.querySelectorAll('table tbody tr').forEach(function(tr){var tds=tr.querySelectorAll('td');if(tds.length<4)return;var hdrs=[];var hrow=tr.closest('table').querySelector('thead tr');if(hrow)hrow.querySelectorAll('th').forEach(function(th){hdrs.push(th.textContent.trim().toLowerCase());});function col(name){var i=hdrs.findIndex(function(h){return h.includes(name);});return i>=0?(tds[i]?.textContent||'').trim():'';};var username=col('username')||col('user')||tds[1]?.textContent.trim();var expire=col('expire')||col('expiry')||col('exp')||tds[3]?.textContent.trim();var notes=col('notes')||col('note')||col('comment')||'';if(username&&username.length>2)rows.push({username:username,exp_date:expire,notes:notes});});if(!rows.length){alert('No rows found. Go to the Lines list page.');return;}var json=JSON.stringify(rows);navigator.clipboard.writeText(json).then(function(){alert('Copied '+rows.length+' lines! Go to momaar.com/panel and click Paste.');}).catch(function(){prompt('Copy:',json);});})();`;
-}
-
-function openSettings() {
-  tempPanels = JSON.parse(JSON.stringify(panels.filter(p => p.id !== 'import')));
-  renderPanelCfg();
-  const bk = document.getElementById('bkmLink');
-  if (bk) bk.href = buildBookmarklet();
-  document.getElementById('settingsOverlay').classList.add('open');
-}
-function closeSettings() { document.getElementById('settingsOverlay').classList.remove('open'); }
-
-function addTempPanel() {
-  tempPanels.push({ id: 'p_'+Date.now(), name: 'Panel '+( tempPanels.length+1), url: 'https://', apiPath: '/api?api_key={KEY}&action=get_lines&limit=5000', apiKey: '', brand: '', website: '', lang: 'en' });
-  renderPanelCfg();
-}
-
-function removePanel(i) {
-  tempPanels.splice(i, 1);
-  renderPanelCfg();
-}
-
-function saveSettings() {
-  const builtinIds = new Set(BUILTIN_PANELS.map(p => p.id));
-  panels = tempPanels.map((p, i) => ({
-    id:      p.id,
-    name:    (document.getElementById(`pname_${i}`)?.value || '').trim()    || p.name,
-    url:     (document.getElementById(`purl_${i}`)?.value  || '').trim().replace(/\/+$/, '') || p.url,
-    apiPath: (document.getElementById(`papipath_${i}`)?.value || '').trim() || p.apiPath,
-    // Never allow overwriting hardcoded API keys from the UI
-    apiKey:  builtinIds.has(p.id) ? p.apiKey : (document.getElementById(`papikey_${i}`)?.value || '').trim() || p.apiKey,
-    brand:   (document.getElementById(`pbrand_${i}`)?.value  || '').trim(),
-    website: (document.getElementById(`pwebsite_${i}`)?.value|| '').trim(),
-    lang:    document.getElementById(`plang_${i}`)?.value    || p.lang,
-  }));
-  localStorage.setItem('iptv_panel_cfgs',    JSON.stringify(panels));
-  localStorage.setItem('iptv_panel_cfg_ver', String(CFG_VERSION));
-  closeSettings();
-  loadAll();
-}
-
-function renderPanelCfg() {
-  document.getElementById('panelCfgList').innerHTML = tempPanels.map((p, i) => `
-    <div class="pcfg">
-      <div class="pcfg-hd">
-        Panel ${i+1}
-        ${i > 0 ? `<button class="rm-btn" onclick="removePanel(${i})">✕ Remove</button>` : ''}
-      </div>
-      <label class="fl">Panel Name</label>
-      <input class="fi" id="pname_${i}" value="${esc(p.name)}">
-      <label class="fl">Panel Base URL</label>
-      <input class="fi" id="purl_${i}" value="${esc(p.url)}" placeholder="https://tvpluspanel.ru">
-      <label class="fl">API Path <span style="color:#6e7681;font-weight:400">(use {KEY} for the api key placeholder)</span></label>
-      <input class="fi" id="papipath_${i}" value="${esc(p.apiPath)}" placeholder="/api?api_key={KEY}&action=get_lines&limit=5000">
-      <div class="hint">Full URL will be: base_url + api_path. If unsure check the API docs in your panel profile.</div>
-      <label class="fl">API Key</label>
-      <input class="fi" id="papikey_${i}" value="${esc(p.apiKey)}" placeholder="API key from panel → Profile / API">
-      <label class="fl">Website (shown in message)</label>
-      <input class="fi" id="pwebsite_${i}" value="${esc(p.website)}" placeholder="e.g. maplestreamtv.ca">
-      <label class="fl">Message Language</label>
-      <select class="fi" id="plang_${i}">
-        <option value="en" ${p.lang==='en'?'selected':''}>English</option>
-        <option value="fr" ${p.lang==='fr'?'selected':''}>French</option>
-        <option value="de" ${p.lang==='de'?'selected':''}>German</option>
-        <option value="no" ${p.lang==='no'?'selected':''}>Norwegian</option>
-      </select>
-    </div>`).join('');
-}
-
-function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;'); }
-
-// ═══════════════════════════════════════════════════
-// TOAST
-// ═══════════════════════════════════════════════════
-function toast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2500);
-}
-
-// ═══════════════════════════════════════════════════
-// CSV / EXCEL IMPORT
-// ═══════════════════════════════════════════════════
+// ── IMPORT ─────────────────────────────────────────
 async function importFile(input) {
   const file = input.files[0];
   if (!file) return;
@@ -818,81 +310,62 @@ async function importFile(input) {
 
   if (ext === 'csv') {
     rows = await parseCSV(file);
-  } else if (ext === 'xlsx' || ext === 'xls') {
-    rows = await parseExcel(file);
   } else {
-    toast('Unsupported file. Use .csv or .xlsx'); return;
+    rows = await parseExcel(file);
   }
 
   if (!rows.length) { toast('No data found in file'); return; }
+  lines = mapRows(rows);
+  if (!lines.length) { toast('Could not read columns — download the template to see the required format'); return; }
 
-  const parsed = mapRows(rows);
-  if (!parsed.length) { toast('Could not map columns — check file has username/expiry columns'); return; }
-
-  // Tag all imported lines with a synthetic panel id
-  const IMPORT_ID = 'import';
-  // Remove previously imported lines and replace
-  allLines = allLines.filter(l => l.panelId !== IMPORT_ID);
-  parsed.forEach(l => { l.panelId = IMPORT_ID; l.panelName = '📥 Import'; });
-  allLines.push(...parsed);
-  allLines.sort((a,b) => {
+  // Sort: expired first, then soonest expiry
+  lines.sort((a,b) => {
     const da = daysUntil(a.expDate), db = daysUntil(b.expDate);
-    if (da===null&&db===null) return 0; if (da===null) return 1; if (db===null) return -1;
+    if (da===null&&db===null) return 0;
+    if (da===null) return 1; if (db===null) return -1;
     return da-db;
   });
 
-  // Save imported lines to localStorage for persistence
-  localStorage.setItem('iptv_panel_imported', JSON.stringify(parsed));
-  panelStatus[IMPORT_ID] = 'ok';
-
-  // Make sure the import panel appears in the tabs
-  if (!panels.find(p => p.id === IMPORT_ID)) {
-    panels.push({ id: IMPORT_ID, name: '📥 Import', website: '', lang: 'en', isBuiltin: false });
-  }
-
-  renderPanelTabs();
-  updateStats();
-  render();
-  toast(`✓ Imported ${parsed.length} lines from ${file.name}`);
+  localStorage.setItem('panel_lines', JSON.stringify(lines.map(l => ({...l, expDate: l.expDate?.toISOString()||null}))));
+  updateStats(); render();
+  toast('✓ Imported ' + lines.length + ' rows from ' + file.name);
 }
 
 function parseCSV(file) {
   return new Promise(resolve => {
-    const reader = new FileReader();
-    reader.onload = e => {
-      const text = e.target.result;
-      const lines = text.split(/\r?\n/).filter(l => l.trim());
-      if (!lines.length) { resolve([]); return; }
-      const headers = splitCSVLine(lines[0]);
-      const rows = lines.slice(1).map(line => {
-        const vals = splitCSVLine(line);
-        const obj = {};
-        headers.forEach((h, i) => { obj[h.trim().toLowerCase()] = (vals[i] || '').trim(); });
-        return obj;
-      });
+    const r = new FileReader();
+    r.onload = e => {
+      const rows = [];
+      const raw  = e.target.result;
+      const all  = raw.split(/\r?\n/).filter(l => l.trim());
+      if (!all.length) { resolve([]); return; }
+      const hdrs = splitCSV(all[0]);
+      for (let i = 1; i < all.length; i++) {
+        const vals = splitCSV(all[i]);
+        const obj  = {};
+        hdrs.forEach((h,j) => { obj[h.trim().toLowerCase()] = (vals[j]||'').trim(); });
+        rows.push(obj);
+      }
       resolve(rows);
     };
-    reader.readAsText(file, 'UTF-8');
+    r.readAsText(file, 'UTF-8');
   });
 }
 
-function splitCSVLine(line) {
-  const result = [];
-  let cur = '', inQ = false;
-  for (let i = 0; i < line.length; i++) {
-    const c = line[i];
+function splitCSV(line) {
+  const res = []; let cur = '', inQ = false;
+  for (const c of line) {
     if (c === '"') { inQ = !inQ; }
-    else if (c === ',' && !inQ) { result.push(cur); cur = ''; }
+    else if (c === ',' && !inQ) { res.push(cur); cur = ''; }
     else { cur += c; }
   }
-  result.push(cur);
-  return result;
+  res.push(cur);
+  return res;
 }
 
 async function parseExcel(file) {
-  // Load SheetJS on demand
   if (!window.XLSX) {
-    await new Promise((res, rej) => {
+    await new Promise((res,rej) => {
       const s = document.createElement('script');
       s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
       s.onload = res; s.onerror = rej;
@@ -900,69 +373,209 @@ async function parseExcel(file) {
     });
   }
   return new Promise(resolve => {
-    const reader = new FileReader();
-    reader.onload = e => {
+    const r = new FileReader();
+    r.onload = e => {
       try {
-        const wb   = XLSX.read(e.target.result, { type: 'array', cellDates: true });
+        const wb   = XLSX.read(e.target.result, { type:'array', cellDates:true });
         const ws   = wb.Sheets[wb.SheetNames[0]];
-        const data = XLSX.utils.sheet_to_json(ws, { defval: '' });
-        // Normalize keys to lowercase
-        const rows = data.map(r => {
+        const data = XLSX.utils.sheet_to_json(ws, { defval:'' });
+        resolve(data.map(row => {
           const o = {};
-          Object.entries(r).forEach(([k,v]) => { o[k.toLowerCase().trim()] = String(v ?? '').trim(); });
+          Object.entries(row).forEach(([k,v]) => { o[k.toLowerCase().trim()] = String(v??'').trim(); });
           return o;
-        });
-        resolve(rows);
-      } catch(e) { resolve([]); }
+        }));
+      } catch(_) { resolve([]); }
     };
-    reader.readAsArrayBuffer(file);
+    r.readAsArrayBuffer(file);
   });
 }
 
 function mapRows(rows) {
-  // Flexible column name mapping
-  const find = (obj, ...keys) => {
-    for (const k of keys) {
-      const match = Object.keys(obj).find(ok => ok.includes(k));
-      if (match) return obj[match];
-    }
-    return '';
-  };
-
-  return rows.map((r, i) => {
-    const username = find(r, 'username', 'user', 'login', 'name');
-    if (!username) return null;
-    const expRaw = find(r, 'exp_date', 'expiry', 'expire', 'expiration', 'exp date', 'end date', 'end');
-    const notes  = find(r, 'notes', 'note', 'comment', 'remark', 'description');
-    const status = find(r, 'enabled', 'status', 'active', 'state');
+  return rows.map((r,i) => {
+    const get = (...keys) => {
+      for (const k of keys) {
+        const found = Object.keys(r).find(rk => rk === k || rk.replace(/[\s_-]/g,'') === k.replace(/[\s_-]/g,''));
+        if (found && r[found]) return r[found];
+      }
+      return '';
+    };
+    const client  = get('client','name','username','user','client name');
+    const expRaw  = get('expiry_date','expiry date','exp_date','exp date','expiration','expire','expiry','exp');
+    const notes   = get('notes','note','comment','remark','phone','description');
+    const lang    = get('lang','language');
+    if (!client && !expRaw) return null;
     return {
-      _key:     'imp_' + i + '_' + username.replace(/[^a-z0-9]/gi,''),
-      id:       'imp_' + i,
-      username,
-      expDate:  parseDate(expRaw),
-      notes:    notes || '',
-      enabled:  !status || !['0','false','disabled','inactive'].includes(status.toLowerCase()),
-      online:   false,
-      isTrial:  false,
+      _key:    'r' + i,
+      client:  client || '(row ' + (i+1) + ')',
+      expDate: parseDate(expRaw),
+      notes:   notes,
+      lang:    lang || '',
     };
   }).filter(Boolean);
 }
 
-// Load persisted import on init
-function loadPersistedImport() {
-  const raw = localStorage.getItem('iptv_panel_imported');
-  if (!raw) return;
-  try {
-    const parsed = JSON.parse(raw);
-    if (!parsed.length) return;
-    parsed.forEach(l => { l.panelId = 'import'; l.panelName = '📥 Import'; l.expDate = parseDate(l.expDate); });
-    allLines.push(...parsed);
-    panelStatus['import'] = 'ok';
-    panels.push({ id: 'import', name: '📥 Import', website: '', lang: 'en', isBuiltin: false });
-  } catch(_) {}
+// ── TEMPLATE DOWNLOAD ──────────────────────────────
+function downloadTemplate() {
+  const csv = [
+    'client,expiry_date,notes,lang',
+    'John Smith,2026-09-15,+1 416 906 2446 one year,en',
+    'Marie Dupont,2025-08-01,+33 6 12 34 56 78 renouveler,fr',
+    'Hans Müller,2026-01-20,+49 151 23456789 ein Jahr,de',
+    'Lars Hansen,2025-10-05,+47 123 456 78 ett år,no',
+  ].join('\n');
+  const a   = document.createElement('a');
+  a.href    = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'panel-template.csv';
+  a.click();
+  toast('Template downloaded — open in Excel and fill it in');
 }
 
-// ── BOOT ──────────────────────────────────────────
+// ── STATS ──────────────────────────────────────────
+function updateStats() {
+  const exp  = lines.filter(l => urgency(l) === 'expired').length;
+  const soon = lines.filter(l => urgency(l) === 'soon').length;
+  const warn = lines.filter(l => urgency(l) === 'warn').length;
+  const ok   = lines.filter(l => urgency(l) === 'ok').length;
+  const done = lines.filter(l => !!contacted[l._key]).length;
+  document.getElementById('st-exp').textContent   = exp;
+  document.getElementById('st-soon').textContent  = soon;
+  document.getElementById('st-warn').textContent  = warn;
+  document.getElementById('st-ok').textContent    = ok;
+  document.getElementById('st-done').textContent  = done;
+  document.getElementById('st-total').textContent = lines.length;
+}
+
+// ── FILTER ─────────────────────────────────────────
+function setFilter(f, btn) {
+  filter = f;
+  document.querySelectorAll('.fb').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  render();
+}
+
+function getFiltered() {
+  const q = (document.getElementById('q')?.value||'').toLowerCase();
+  return lines.filter(l => {
+    if (q && !l.client.toLowerCase().includes(q) && !l.notes.toLowerCase().includes(q) && !(extractPhone(l.notes)||'').includes(q)) return false;
+    const u = urgency(l), done = !!contacted[l._key];
+    if (filter === 'expired')   return u === 'expired';
+    if (filter === 'soon')      return u === 'soon';
+    if (filter === 'warn')      return u === 'warn';
+    if (filter === 'active')    return u === 'ok';
+    if (filter === 'contacted') return done;
+    return true;
+  });
+}
+
+// ── RENDER ─────────────────────────────────────────
+function isAndroid() { return /android/i.test(navigator.userAgent); }
+
+function render() {
+  const el   = document.getElementById('list');
+  const list = getFiltered();
+
+  if (!lines.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">📂</div><b>No data yet</b><br><br>Click <b style="color:#3b82f6">⬇ Template</b> to download the Excel template,<br>fill it in, then click <b style="color:#3b82f6">📥 Import Excel / CSV</b>.</div>`;
+    return;
+  }
+  if (!list.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">📭</div>No lines match this filter</div>';
+    return;
+  }
+
+  el.innerHTML = list.map(l => {
+    const u     = urgency(l);
+    const days  = daysUntil(l.expDate);
+    const phone = extractPhone(l.notes);
+    const done  = !!contacted[l._key];
+    const ek    = l._key.replace(/'/g,"\\'");
+    const msg   = buildMsg(l);
+
+    let eLabel, eCls;
+    if (u === 'expired') { eLabel = '🔴 Expired ' + (days!==null?Math.abs(days)+'d ago':''); eCls='eb-exp'; }
+    else if (u === 'soon')   { eLabel = '🟠 '+days+'d left'; eCls='eb-soon'; }
+    else if (u === 'warn')   { eLabel = '🟡 '+days+'d left'; eCls='eb-warn'; }
+    else if (u === 'ok')     { eLabel = '🟢 '+days+'d left'; eCls='eb-ok'; }
+    else                     { eLabel = '❓ No date';         eCls='eb-warn'; }
+
+    const waUrl = phone
+      ? (isAndroid()
+          ? 'intent://send?phone='+phone.replace(/\D/g,'')+'&text='+encodeURIComponent(msg)+'#Intent;scheme=whatsapp;package=com.whatsapp;action=android.intent.action.VIEW;end'
+          : 'https://wa.me/'+phone.replace(/\D/g,'')+'?text='+encodeURIComponent(msg))
+      : null;
+
+    return `<div class="card u-${u} ${done?'contacted':''}" id="c-${ek}">
+      ${done ? '<span class="badge-done">✓ Done</span>' : ''}
+      <div class="row1">
+        <span class="cname">${l.client}</span>
+        <span class="ebadge ${eCls}">${eLabel}</span>
+      </div>
+      <div class="row2">
+        <div class="meta">
+          <div class="exp-date">📅 ${fmtDate(l.expDate)}</div>
+          ${l.notes ? `<div class="note-txt">📝 ${l.notes}</div>` : ''}
+          ${phone   ? `<div class="phone-txt">📱 ${phone}</div>` : ''}
+          ${done    ? `<button class="undo-btn" onclick="unmark('${ek}')">↩ Undo</button>` : ''}
+        </div>
+        <div class="btns">
+          ${waUrl ? `<a class="abtn wa" href="${waUrl}" ${isAndroid()?'':'target="_blank"'} onclick="markDone('${ek}')">💬 WhatsApp</a>` : ''}
+          <div class="btn-row">
+            <button class="abtn copy" onclick="copyMsg('${ek}')">📋 Copy msg</button>
+            <button class="abtn mark ${done?'marked':''}" onclick="${done?`unmark('${ek}')`:`markDone('${ek}',true)`}">
+              ${done ? '✓' : '✓ Mark'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Store messages for copyMsg
+  list.forEach(l => { window['_msg_'+l._key] = buildMsg(l); });
+}
+
+// ── ACTIONS ────────────────────────────────────────
+function markDone(key, showToast) {
+  contacted[key] = new Date().toISOString();
+  localStorage.setItem('panel_contacted', JSON.stringify(contacted));
+  updateStats(); render();
+  if (showToast) toast('Marked as contacted ✓');
+}
+function unmark(key) {
+  delete contacted[key];
+  localStorage.setItem('panel_contacted', JSON.stringify(contacted));
+  updateStats(); render();
+  toast('Unmarked ↩');
+}
+function copyMsg(key) {
+  const msg = window['_msg_'+key] || buildMsg(lines.find(l=>l._key===key)||{});
+  navigator.clipboard.writeText(msg).then(()=>toast('Message copied ✓')).catch(()=>toast('Copy failed'));
+}
+
+// ── SETTINGS ───────────────────────────────────────
+function openSettings() {
+  document.getElementById('cfg-lang').value    = cfg.lang    || 'en';
+  document.getElementById('cfg-website').value = cfg.website || '';
+  document.getElementById('settingsOverlay').classList.add('open');
+}
+function closeSettings() { document.getElementById('settingsOverlay').classList.remove('open'); }
+function saveSettings() {
+  cfg.lang    = document.getElementById('cfg-lang').value;
+  cfg.website = document.getElementById('cfg-website').value.trim();
+  localStorage.setItem('panel_cfg', JSON.stringify(cfg));
+  closeSettings();
+  render();
+  toast('Settings saved ✓');
+}
+
+// ── TOAST ──────────────────────────────────────────
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2500);
+}
+
 init();
 </script>
 </body>
