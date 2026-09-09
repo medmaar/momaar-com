@@ -203,18 +203,32 @@ select.fi{cursor:pointer}
 // CONFIG
 // ═══════════════════════════════════════════════════
 const CORS_PROXY = 'https://iptv-cors-proxy.medmaar.workers.dev';
+const CFG_VERSION = 2; // bump when BUILTIN_PANELS changes
 
-const DEFAULT_PANELS = [
+// ── Hardcoded panels (always present, never lost) ──
+// Add new panels here; they are merged into localStorage on version bump.
+const BUILTIN_PANELS = [
   {
-    id:      'tvplus',
-    name:    'TVPLUS',
+    id:      'tvplus_1',
+    name:    'Dino #1',
     url:     'https://tvpluspanel.ru',
     apiPath: '/api?api_key={KEY}&action=get_lines&limit=5000',
     apiKey:  '308ba31e2a3bee95fcd098e2dba126c0',
     brand:   '',
     website: '',
     lang:    'en'
+  },
+  {
+    id:      'tvplus_2',
+    name:    'Dino #2',
+    url:     'https://tvpluspanel.ru',
+    apiPath: '/api?api_key={KEY}&action=get_lines&limit=5000',
+    apiKey:  '8c989bd3cb1f01c6898178d1d8b997e0',
+    brand:   '',
+    website: '',
+    lang:    'en'
   }
+  // → More panels will be added here by code as the user provides keys
 ];
 
 const EXPIRY_MSGS = {
@@ -251,8 +265,30 @@ let tempPanels   = [];
 // BOOT
 // ═══════════════════════════════════════════════════
 function init() {
-  panels    = JSON.parse(localStorage.getItem('iptv_panel_cfgs') || JSON.stringify(DEFAULT_PANELS));
   contacted = JSON.parse(localStorage.getItem('iptv_panel_contacted') || '{}');
+
+  // Always merge BUILTIN_PANELS so new hardcoded keys are never lost.
+  // User-saved extra panels (added via ⚙️) are kept alongside builtins.
+  const saved      = JSON.parse(localStorage.getItem('iptv_panel_cfgs') || 'null');
+  const savedVer   = Number(localStorage.getItem('iptv_panel_cfg_ver') || 0);
+  let extra        = [];
+  if (saved && savedVer === CFG_VERSION) {
+    // Keep any panels the user added that aren't in BUILTIN_PANELS
+    const builtinIds = new Set(BUILTIN_PANELS.map(p => p.id));
+    extra = saved.filter(p => !builtinIds.has(p.id));
+    // Also carry over user edits to builtin panels (name, website, lang, brand)
+    BUILTIN_PANELS.forEach(bp => {
+      const override = saved.find(p => p.id === bp.id);
+      if (override) {
+        bp.name    = override.name    || bp.name;
+        bp.website = override.website || bp.website;
+        bp.brand   = override.brand   || bp.brand;
+        bp.lang    = override.lang    || bp.lang;
+        // Never override url / apiKey / apiPath from localStorage
+      }
+    });
+  }
+  panels = [...BUILTIN_PANELS, ...extra];
   renderPanelTabs();
   loadAll();
 }
@@ -295,16 +331,52 @@ async function loadAll() {
 }
 
 async function loadPanel(panel) {
-  const apiUrl   = panel.url.replace(/\/+$/, '') + panel.apiPath.replace('{KEY}', panel.apiKey);
-  const proxyUrl = CORS_PROXY + '?url=' + encodeURIComponent(apiUrl);
+  const base    = panel.url.replace(/\/+$/, '');
+  const apiPath = panel.apiPath.replace('{KEY}', panel.apiKey);
+  const apiUrl  = base + apiPath;
 
-  const res = await fetch(proxyUrl);
-  if (!res.ok) throw new Error('HTTP ' + res.status + ' from proxy');
+  // The CORS proxy accepts the target URL appended to its path.
+  // We also try the ?url= format as fallback.
+  const candidates = [
+    CORS_PROXY + '/' + apiUrl,                          // path-append (most common)
+    CORS_PROXY + '?url=' + encodeURIComponent(apiUrl),  // query-param fallback
+  ];
 
-  let data;
-  try { data = await res.json(); } catch(e) { throw new Error('Response is not JSON — check API path in settings'); }
+  // Also try alternative API action names in case the panel uses a different one
+  const altActions = [
+    panel.apiPath.replace('{KEY}', panel.apiKey),
+    apiPath.replace('get_lines',   'get_all_users'),
+    apiPath.replace('get_lines',   'get_my_lines'),
+    apiPath.replace('get_lines',   'get_users'),
+  ];
 
-  return parseApiResponse(data);
+  let lastErr = 'No response';
+  let rawSnippet = '';
+
+  for (const proxyBase of candidates) {
+    for (const alt of [...new Set(altActions)]) {
+      const altUrl  = base + alt;
+      const tryUrl  = proxyBase.startsWith(CORS_PROXY + '/')
+        ? CORS_PROXY + '/' + altUrl
+        : CORS_PROXY + '?url=' + encodeURIComponent(altUrl);
+      try {
+        const res  = await fetch(tryUrl, { signal: AbortSignal.timeout(12000) });
+        const text = await res.text();
+        rawSnippet = text.slice(0, 300);
+        if (!res.ok) { lastErr = `HTTP ${res.status}`; continue; }
+        let data;
+        try { data = JSON.parse(text); } catch(_) {
+          lastErr = `Not JSON — got: ${rawSnippet}`;
+          continue;
+        }
+        return parseApiResponse(data); // ← success
+      } catch(e) {
+        lastErr = e.message || String(e);
+      }
+    }
+    // If path-append version succeeded above we already returned; if every alt failed move to next proxy format
+  }
+  throw new Error(`${lastErr}\nRaw response: ${rawSnippet || '(empty)'}`);
 }
 
 // ═══════════════════════════════════════════════════
@@ -640,17 +712,20 @@ function removePanel(i) {
 }
 
 function saveSettings() {
+  const builtinIds = new Set(BUILTIN_PANELS.map(p => p.id));
   panels = tempPanels.map((p, i) => ({
     id:      p.id,
     name:    (document.getElementById(`pname_${i}`)?.value || '').trim()    || p.name,
     url:     (document.getElementById(`purl_${i}`)?.value  || '').trim().replace(/\/+$/, '') || p.url,
     apiPath: (document.getElementById(`papipath_${i}`)?.value || '').trim() || p.apiPath,
-    apiKey:  (document.getElementById(`papikey_${i}`)?.value || '').trim()  || p.apiKey,
+    // Never allow overwriting hardcoded API keys from the UI
+    apiKey:  builtinIds.has(p.id) ? p.apiKey : (document.getElementById(`papikey_${i}`)?.value || '').trim() || p.apiKey,
     brand:   (document.getElementById(`pbrand_${i}`)?.value  || '').trim(),
     website: (document.getElementById(`pwebsite_${i}`)?.value|| '').trim(),
     lang:    document.getElementById(`plang_${i}`)?.value    || p.lang,
   }));
-  localStorage.setItem('iptv_panel_cfgs', JSON.stringify(panels));
+  localStorage.setItem('iptv_panel_cfgs',    JSON.stringify(panels));
+  localStorage.setItem('iptv_panel_cfg_ver', String(CFG_VERSION));
   closeSettings();
   loadAll();
 }
