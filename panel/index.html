@@ -133,6 +133,7 @@ select.fi{cursor:pointer}
   <div class="today-badge">Today: <b id="todayDisplay"></b></div>
   <button class="tb-btn primary" onclick="document.getElementById('xlFile').click()">📥 Import Excel / CSV</button>
   <input type="file" id="xlFile" accept=".csv,.xlsx,.xls" style="display:none" onchange="importFile(this)">
+  <button class="tb-btn" onclick="downloadExcel()" title="Export current data + contacted status">⬇ Download Excel</button>
   <div class="sb"><input type="search" id="q" placeholder="🔍  Search client, note or phone…" oninput="render()"></div>
 </div>
 
@@ -326,10 +327,13 @@ async function importFile(input) {
   }
 
   if (!rows.length) { toast('No data found in file'); return; }
-  lines = mapRows(rows);
-  if (!lines.length) { toast('Could not read columns — download the template to see the required format'); return; }
+  const parsed = mapRows(rows);
+  if (!parsed.length) { toast('Could not read columns — check file has Expire and Notes columns'); return; }
 
-  // Sort: expired first, then soonest expiry
+  // Merge: keep contacted status for lines that match by _key (server:username)
+  // so re-uploading an updated Excel never wipes your contacted history
+  lines = parsed;
+
   lines.sort((a,b) => {
     const da = daysUntil(a.expDate), db = daysUntil(b.expDate);
     if (da===null&&db===null) return 0;
@@ -339,7 +343,7 @@ async function importFile(input) {
 
   localStorage.setItem('panel_lines', JSON.stringify(lines.map(l => ({...l, expDate: l.expDate?.toISOString()||null}))));
   updateStats(); render();
-  toast('✓ Imported ' + lines.length + ' rows from ' + file.name);
+  toast('✓ ' + lines.length + ' rows imported — contacted history preserved');
 }
 
 function parseCSV(file) {
@@ -410,15 +414,19 @@ function mapRows(rows) {
       }
       return '';
     };
-    const expRaw  = get('expiry_date','expiry date','exp_date','exp date','expiration','expire','expiry','exp');
+    const server  = get('server','panel','srv');
+    const uname   = get('username','user','login','name','client');
+    const expRaw  = get('expire','expiry_date','expiry date','exp_date','exp date','expiration','expiry','exp');
     const notes   = get('notes','note','comment','remark','phone','description');
-    if (!expRaw && !notes) return null;
+    if (!expRaw && !notes && !uname) return null;
+    const key     = ((server||'?') + ':' + (uname||('row'+i))).toLowerCase();
     const phone   = extractPhone(notes);
     return {
-      _key:    'r' + i,
-      client:  phone || ('Row ' + (i+1)),
+      _key:    key,
+      client:  uname || phone || ('Row ' + (i+1)),
+      server:  server || '',
       expDate: parseDate(expRaw),
-      notes:   notes,
+      notes:   notes || '',
     };
   }).filter(Boolean);
 }
@@ -426,17 +434,45 @@ function mapRows(rows) {
 // ── TEMPLATE DOWNLOAD ──────────────────────────────
 function downloadTemplate() {
   const csv = [
-    'expiry_date,notes',
-    '2026-09-15,+1 416 906 2446 one year',
-    '2025-08-01,+33 6 12 34 56 78 one year',
-    '2026-01-20,+49 151 23456789 one year',
-    '2025-10-05,+47 123 456 78 one year',
+    'Server,Username,Expire,Notes',
+    'Dino,abc123def4,2026-09-15,+1 416 906 2446 one year',
+    'Dino,xyz789ghi0,2025-08-01,+33 6 12 34 56 78 one year',
   ].join('\n');
   const a   = document.createElement('a');
   a.href    = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
   a.download = 'panel-template.csv';
   a.click();
-  toast('Template downloaded — open in Excel and fill it in');
+  toast('Template downloaded');
+}
+
+// ── EXPORT EXCEL WITH CONTACTED COLUMN ─────────────
+async function downloadExcel() {
+  if (!lines.length) { toast('Import data first'); return; }
+  if (!window.XLSX) {
+    await new Promise((res,rej) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+      s.onload = res; s.onerror = rej;
+      document.head.appendChild(s);
+    });
+  }
+  const rows = lines.map(l => {
+    const c = contacted[l._key];
+    return {
+      'Server':      l.server || '',
+      'Username':    l.client,
+      'Expire Date': l.expDate ? fmtDate(l.expDate) : '',
+      'Notes':       l.notes  || '',
+      'Contacted':   c ? new Date(c).toLocaleDateString('en-GB') : 'No',
+    };
+  });
+  const ws = XLSX.utils.json_to_sheet(rows);
+  // Column widths
+  ws['!cols'] = [{ wch:12 },{ wch:16 },{ wch:14 },{ wch:40 },{ wch:14 }];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Lines');
+  XLSX.writeFile(wb, 'panel-lines-' + new Date().toISOString().slice(0,10) + '.xlsx');
+  toast('Excel downloaded ✓');
 }
 
 // ── STATS ──────────────────────────────────────────
@@ -516,6 +552,7 @@ function render() {
     return `<div class="card u-${u} ${done?'contacted':''}" id="c-${ek}">
       ${done ? '<span class="badge-done">✓ Done</span>' : ''}
       <div class="row1">
+        ${l.server ? `<span style="font-size:10px;font-weight:700;background:#1e3a5f;color:#60a5fa;padding:2px 7px;border-radius:10px">${l.server}</span>` : ''}
         <span class="cname">${l.client}</span>
         <span class="ebadge ${eCls}">${eLabel}</span>
       </div>
