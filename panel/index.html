@@ -410,13 +410,13 @@ function mapRows(rows) {
       }
       return '';
     };
-    const client  = get('client','name','username','user','client name');
     const expRaw  = get('expiry_date','expiry date','exp_date','exp date','expiration','expire','expiry','exp');
     const notes   = get('notes','note','comment','remark','phone','description');
-    if (!client && !expRaw) return null;
+    if (!expRaw && !notes) return null;
+    const phone   = extractPhone(notes);
     return {
       _key:    'r' + i,
-      client:  client || '(row ' + (i+1) + ')',
+      client:  phone || ('Row ' + (i+1)),
       expDate: parseDate(expRaw),
       notes:   notes,
     };
@@ -426,11 +426,11 @@ function mapRows(rows) {
 // ── TEMPLATE DOWNLOAD ──────────────────────────────
 function downloadTemplate() {
   const csv = [
-    'client,expiry_date,notes',
-    'John Smith,2026-09-15,+1 416 906 2446 one year',
-    'Marie Dupont,2025-08-01,+33 6 12 34 56 78 one year',
-    'Hans Müller,2026-01-20,+49 151 23456789 one year',
-    'Lars Hansen,2025-10-05,+47 123 456 78 one year',
+    'expiry_date,notes',
+    '2026-09-15,+1 416 906 2446 one year',
+    '2025-08-01,+33 6 12 34 56 78 one year',
+    '2026-01-20,+49 151 23456789 one year',
+    '2025-10-05,+47 123 456 78 one year',
   ].join('\n');
   const a   = document.createElement('a');
   a.href    = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
@@ -484,7 +484,7 @@ function render() {
   const list = getFiltered();
 
   if (!lines.length) {
-    el.innerHTML = `<div class="empty"><div class="empty-icon">📂</div><b>No data yet</b><br><br>Click <b style="color:#3b82f6">⬇ Template</b> to download the Excel template,<br>fill it in, then click <b style="color:#3b82f6">📥 Import Excel / CSV</b>.</div>`;
+    el.innerHTML = `<div class="empty"><div class="empty-icon">📂</div><b>No data yet</b><br><br>Click <b style="color:#3b82f6">⬇ Template</b> to download the Excel template<br>(2 columns: <b>expiry_date</b> and <b>notes</b>),<br>fill it in, then click <b style="color:#3b82f6">📥 Import Excel / CSV</b>.</div>`;
     return;
   }
   if (!list.length) {
