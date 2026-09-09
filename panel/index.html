@@ -165,7 +165,9 @@ select.fi{cursor:pointer}
 
   <div class="sb">
     <input type="search" id="q" placeholder="🔍  Search username, note or phone…" oninput="render()">
-    <button class="rbtn" onclick="loadAll()" title="Refresh">🔄</button>
+    <button class="rbtn" onclick="document.getElementById('csvFile').click()" title="Import CSV / Excel">📥 Import</button>
+    <input type="file" id="csvFile" accept=".csv,.xlsx,.xls" style="display:none" onchange="importFile(this)">
+    <button class="rbtn" onclick="loadAll()" title="Refresh from API">🔄</button>
   </div>
 
   <div class="filters">
@@ -251,15 +253,12 @@ function init() {
   contacted = JSON.parse(localStorage.getItem('iptv_panel_contacted') || '{}');
 
   // Always merge BUILTIN_PANELS so new hardcoded keys are never lost.
-  // User-saved extra panels (added via ⚙️) are kept alongside builtins.
   const saved      = JSON.parse(localStorage.getItem('iptv_panel_cfgs') || 'null');
   const savedVer   = Number(localStorage.getItem('iptv_panel_cfg_ver') || 0);
   let extra        = [];
   if (saved && savedVer === CFG_VERSION) {
-    // Keep any panels the user added that aren't in BUILTIN_PANELS
     const builtinIds = new Set(BUILTIN_PANELS.map(p => p.id));
     extra = saved.filter(p => !builtinIds.has(p.id));
-    // Also carry over user edits to builtin panels (name, website, lang, brand)
     BUILTIN_PANELS.forEach(bp => {
       const override = saved.find(p => p.id === bp.id);
       if (override) {
@@ -267,11 +266,14 @@ function init() {
         bp.website = override.website || bp.website;
         bp.brand   = override.brand   || bp.brand;
         bp.lang    = override.lang    || bp.lang;
-        // Never override url / apiKey / apiPath from localStorage
       }
     });
   }
   panels = [...BUILTIN_PANELS, ...extra];
+
+  // Restore any previously imported CSV/Excel lines
+  loadPersistedImport();
+
   renderPanelTabs();
   loadAll();
 }
@@ -518,16 +520,18 @@ function render() {
   // Show panel errors
   if (errors.length) {
     html += errors.map(p => {
-      const msg = (panelStatus[p.id] || '').replace('error:', '');
+      const raw = (panelStatus[p.id] || '').replace('error:', '');
+      // raw may contain newlines with debug info
+      const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+      const title = lines[0] || 'Unknown error';
+      const detail = lines.slice(1).join('\n');
+      const apiRef = p.isBuiltin
+        ? `/api-proxy?p=${p.id}  (server-side proxy)`
+        : `${p.url || '?'}${(p.apiPath || '').replace('{KEY}', '***')}`;
       return `<div class="err-box">
-        <b>⚠️ ${p.name} failed to load</b>
-        ${msg}
-        <code>API: ${p.url}${p.apiPath.replace('{KEY}', '***')}</code>
-        <div style="margin-top:8px;font-size:11px;color:#8b949e">
-          💡 Check the API path in ⚙️ Panels settings. Common formats:
-          <code style="margin-top:4px">/api?api_key={KEY}&amp;action=get_lines</code>
-          <code style="margin-top:3px">/api/reseller/lines?api_key={KEY}</code>
-        </div>
+        <b>⚠️ ${p.name} — ${title}</b>
+        ${detail ? `<pre style="margin:6px 0;white-space:pre-wrap;font-size:10px;color:#8b949e">${detail}</pre>` : ''}
+        <code>${apiRef}</code>
       </div>`;
     }).join('');
   }
@@ -735,6 +739,163 @@ function toast(msg) {
   t.textContent = msg;
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ═══════════════════════════════════════════════════
+// CSV / EXCEL IMPORT
+// ═══════════════════════════════════════════════════
+async function importFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  input.value = '';
+
+  const ext = file.name.split('.').pop().toLowerCase();
+  let rows = [];
+
+  if (ext === 'csv') {
+    rows = await parseCSV(file);
+  } else if (ext === 'xlsx' || ext === 'xls') {
+    rows = await parseExcel(file);
+  } else {
+    toast('Unsupported file. Use .csv or .xlsx'); return;
+  }
+
+  if (!rows.length) { toast('No data found in file'); return; }
+
+  const parsed = mapRows(rows);
+  if (!parsed.length) { toast('Could not map columns — check file has username/expiry columns'); return; }
+
+  // Tag all imported lines with a synthetic panel id
+  const IMPORT_ID = 'import';
+  // Remove previously imported lines and replace
+  allLines = allLines.filter(l => l.panelId !== IMPORT_ID);
+  parsed.forEach(l => { l.panelId = IMPORT_ID; l.panelName = '📥 Import'; });
+  allLines.push(...parsed);
+  allLines.sort((a,b) => {
+    const da = daysUntil(a.expDate), db = daysUntil(b.expDate);
+    if (da===null&&db===null) return 0; if (da===null) return 1; if (db===null) return -1;
+    return da-db;
+  });
+
+  // Save imported lines to localStorage for persistence
+  localStorage.setItem('iptv_panel_imported', JSON.stringify(parsed));
+  panelStatus[IMPORT_ID] = 'ok';
+
+  // Make sure the import panel appears in the tabs
+  if (!panels.find(p => p.id === IMPORT_ID)) {
+    panels.push({ id: IMPORT_ID, name: '📥 Import', website: '', lang: 'en', isBuiltin: false });
+  }
+
+  renderPanelTabs();
+  updateStats();
+  render();
+  toast(`✓ Imported ${parsed.length} lines from ${file.name}`);
+}
+
+function parseCSV(file) {
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const text = e.target.result;
+      const lines = text.split(/\r?\n/).filter(l => l.trim());
+      if (!lines.length) { resolve([]); return; }
+      const headers = splitCSVLine(lines[0]);
+      const rows = lines.slice(1).map(line => {
+        const vals = splitCSVLine(line);
+        const obj = {};
+        headers.forEach((h, i) => { obj[h.trim().toLowerCase()] = (vals[i] || '').trim(); });
+        return obj;
+      });
+      resolve(rows);
+    };
+    reader.readAsText(file, 'UTF-8');
+  });
+}
+
+function splitCSVLine(line) {
+  const result = [];
+  let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') { inQ = !inQ; }
+    else if (c === ',' && !inQ) { result.push(cur); cur = ''; }
+    else { cur += c; }
+  }
+  result.push(cur);
+  return result;
+}
+
+async function parseExcel(file) {
+  // Load SheetJS on demand
+  if (!window.XLSX) {
+    await new Promise((res, rej) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+      s.onload = res; s.onerror = rej;
+      document.head.appendChild(s);
+    });
+  }
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const wb   = XLSX.read(e.target.result, { type: 'array', cellDates: true });
+        const ws   = wb.Sheets[wb.SheetNames[0]];
+        const data = XLSX.utils.sheet_to_json(ws, { defval: '' });
+        // Normalize keys to lowercase
+        const rows = data.map(r => {
+          const o = {};
+          Object.entries(r).forEach(([k,v]) => { o[k.toLowerCase().trim()] = String(v ?? '').trim(); });
+          return o;
+        });
+        resolve(rows);
+      } catch(e) { resolve([]); }
+    };
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+function mapRows(rows) {
+  // Flexible column name mapping
+  const find = (obj, ...keys) => {
+    for (const k of keys) {
+      const match = Object.keys(obj).find(ok => ok.includes(k));
+      if (match) return obj[match];
+    }
+    return '';
+  };
+
+  return rows.map((r, i) => {
+    const username = find(r, 'username', 'user', 'login', 'name');
+    if (!username) return null;
+    const expRaw = find(r, 'exp_date', 'expiry', 'expire', 'expiration', 'exp date', 'end date', 'end');
+    const notes  = find(r, 'notes', 'note', 'comment', 'remark', 'description');
+    const status = find(r, 'enabled', 'status', 'active', 'state');
+    return {
+      _key:     'imp_' + i + '_' + username.replace(/[^a-z0-9]/gi,''),
+      id:       'imp_' + i,
+      username,
+      expDate:  parseDate(expRaw),
+      notes:    notes || '',
+      enabled:  !status || !['0','false','disabled','inactive'].includes(status.toLowerCase()),
+      online:   false,
+      isTrial:  false,
+    };
+  }).filter(Boolean);
+}
+
+// Load persisted import on init
+function loadPersistedImport() {
+  const raw = localStorage.getItem('iptv_panel_imported');
+  if (!raw) return;
+  try {
+    const parsed = JSON.parse(raw);
+    if (!parsed.length) return;
+    parsed.forEach(l => { l.panelId = 'import'; l.panelName = '📥 Import'; l.expDate = parseDate(l.expDate); });
+    allLines.push(...parsed);
+    panelStatus['import'] = 'ok';
+    panels.push({ id: 'import', name: '📥 Import', website: '', lang: 'en', isBuiltin: false });
+  } catch(_) {}
 }
 
 // ── BOOT ──────────────────────────────────────────
